@@ -15,6 +15,10 @@ function repack(image){
  sc.drawImage(image,0,0);
  const data=sc.getImageData(0,0,W,H).data;
  const total=W*H,labels=new Int32Array(total),queue=new Int32Array(total);
+ // No reconstruir atlas con fondo opaco: no son hojas de siluetas separadas.
+ let nontransparent=0;
+ for(let i=3;i<data.length;i+=4)if(data[i]>9)nontransparent++;
+ if(nontransparent>total*.72)return null;
  const owners=[0],ambiguous=[false];let label=0;
  const alphaAt=i=>data[i*4+3];
  for(let i=0;i<total;i++){
