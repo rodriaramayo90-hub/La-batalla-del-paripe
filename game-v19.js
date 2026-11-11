@@ -49,7 +49,7 @@ const x1=a.x+a.dir*from,x2=a.x+a.dir*far;
 return {left:Math.min(x1,x2),right:Math.max(x1,x2),top:463-a.y-277,bottom:463-a.y-55}}
 function projectileHitbox(p){const dx=p.kind===-2?65:p.kind===6?55:43,dy=p.kind===-2?72:47;return{left:p.x-dx,right:p.x+dx,top:p.y-dy,bottom:p.y+dy}}
 function bufferAction(key){queued[key]=12}
-const CHARGE_FRAMES=48,chargeInputs=new Map(),queuedPower={punch:false,kick:false};
+const CHARGE_FRAMES=36,chargeInputs=new Map(),queuedPower={punch:false,kick:false};
 function beginCharge(type,source){if(mode!=='game'||ending||introFrames>0||!player||player.stun>0||player.blockstun>0||keys.defend||player.y>0||type==='kick'&&player.legGone)return;chargeInputs.set(source,{type,frames:0,ready:false});}
 function releaseCharge(source,cancel=false){const hold=chargeInputs.get(source);if(!hold)return;chargeInputs.delete(source);if(!cancel&&mode==='game'&&!ending&&player.stun<=0){bufferAction(hold.type);queuedPower[hold.type]=hold.frames>=CHARGE_FRAMES;}syncChargeButtons();}
 function cancelCharges(){chargeInputs.clear();queuedPower.punch=queuedPower.kick=false;syncChargeButtons();}
