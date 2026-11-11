@@ -1,23 +1,13 @@
-# Salas online: versión de revisión
+# Salas online conectadas
 
-## Estado
-Implementadas y verificadas en servidor Cloudflare local y dos navegadores. El Worker público configurado es https://la-batalla-del-paripe-online.rodriaramayo90.workers.dev. Al comprobarlo el 11 de noviembre de 2026, responde Hello World!, por lo que falta desplegar este servidor. No se ha verificado todavía una partida pública. La versión de main permanece intacta. No se ha cambiado ningún dominio ni DNS.
+Servidor: https://la-batalla-del-paripe-online.rodriaramayo90.workers.dev
 
-## Desplegar sin tocar Hoy Toca Playa
-En Cloudflare, Workers & Pages → Create → Import a repository. Elegir únicamente rodriaramayo90-hub/La-batalla-del-paripe, rama online-salas-v25. Directorio raíz: online-server. Nombre del Worker: la-batalla-del-paripe-online. Comando de despliegue: npx wrangler deploy. Instalar dependencias con npm ci si el formulario lo pide. No añadir dominios personalizados ni rutas de zona; la configuración usa workers.dev.
+Se verificó el endpoint /health y una partida con dos navegadores contra el Worker público: creación de sala, invitación, elección de personajes, golpes de ambos jugadores, salud sincronizada y victoria al llegar a dos rondas al mejor de tres.
 
-Al terminar, copiar la URL HTTPS workers.dev del Worker. Esa URL no es una contraseña. Ya está puesta en online-config.js. Falta desplegar este servidor, verificar dos clientes contra el Worker público y después integrar esta rama en main. No publicar el menú online antes de configurar y verificar el servidor.
+La rama online-salas-v25 es la fuente del Worker en Cloudflare. El directorio raíz es online-server; build npm ci; deploy npx wrangler deploy. No usa dominios propios ni rutas de zona, y no modifica Hoy Toca Playa.
 
-Alternativa por CLI: los pasos están en online-server/README.md.
+El anfitrión simula la pelea y el invitado recibe estados a 20 Hz por WebSocket; envía entradas a 30 Hz. Esta primera versión es para partidas amistosas, sin antitrampas ni rollback. Ambos deben mantener abierta la pestaña; las desconexiones terminan la sesión y las salas expiran a las dos horas. Falta comprobar la experiencia y la latencia en teléfonos físicos de redes distintas.
 
-## Comprobaciones realizadas
-- Worker local real con Durable Objects, sin mock de red.
-- Dos navegadores: crear, invitar, elegir personajes distintos, confirmar, golpes en ambos sentidos, salud sincronizada, siguiente ronda, victoria al llegar a 2 en mejor de 3.
-- Protocolo: mejor de 1/3/5/7; sala llena; desconexión; el invitado no puede reportar resultados como anfitrión.
-- Regresión: escape de esquina con 12 personajes y ambas orientaciones; portada sin recortes en ocho tamaños.
+Configuración: al mejor de 1, 3, 5 o 7 rondas. Gana la mayoría. Un empate repite la ronda. Ambos confirman cada ronda y la revancha.
 
-## Límites de esta primera versión
-Simulación en el anfitrión, sin antitrampas ni rollback; apropiada para partidas amistosas. El invitado recibe estados a 20 Hz y manda entradas a 30 Hz. Hay latencia; falta verificarla con móviles en redes distintas. No hay reconexión de partidas interrumpidas. El anfitrión debe mantener la pestaña abierta y en horizontal. No se ofrece audio por micrófono. Las salas expiran a las dos horas. Cloudflare puede requerir habilitar Durable Objects; revisar límites y condiciones de la cuenta antes de desplegar.
-
-## Actualización v27
-Se integraron los cambios sobre main v26, conservando el audio nativo de Samsung Internet. El frontend sigue en rama de revisión; main permanece intacto. El Worker existente con plantilla Hello World debe actualizarse con el código de online-server.
+La integración conserva las correcciones de sonido para Samsung Internet, el escape de esquina y los golpes cargados a 0,6 segundos.
