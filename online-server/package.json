@@ -1,0 +1,14 @@
+{
+  "name": "paripe-online",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --ip 127.0.0.1 --port 8895",
+    "deploy": "wrangler deploy",
+    "check": "node --check src/index.js",
+    "test": "node test/rooms.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  }
+}
