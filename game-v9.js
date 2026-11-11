@@ -20,7 +20,16 @@ const atlases=['fighters-a.webp','fighters-b.webp','fighters-c.webp','costumes-v
 const specials=['a','b','c'].map(n=>loadImage('assets/specials-v4-'+n+'.webp'));
 const props=loadImage('assets/props-v4.webp'),florPortrait=loadImage('assets/flor-portrait-v4.webp');
 const actionAtlases=['a','b','c'].map(n=>loadImage('assets/actions-v7-'+n+'.webp'));const allImages=[...atlases,...specials,...actionAtlases,props,florPortrait];
-let assetsLoaded=false;const assetReady=Promise.all(allImages.map(im=>im.decode())).then(()=>assetsLoaded=true);assetReady.catch(()=>{});
+let assetsLoaded=false;
+const assetReady=Promise.all(allImages.map(im=>im.decode())).then(()=>{
+ if(window.SpriteRepair){
+  for(const im of [...actionAtlases,...specials]){
+   try{window.SpriteRepair.repack(im)}catch(e){console.warn('Sprite repair fallback:',e)}
+  }
+ }
+ assetsLoaded=true;
+ return true;
+});assetReady.catch(()=>{});
 const atlasMap=[[3,0],[3,1],[1,1],[3,2],[0,3],[1,3],[2,0],[3,3],[2,1],[0,1],[2,2],[2,3]];
 const specialMap=[[0,0],[0,1],[2,0],[0,2],[0,3],[1,0],[1,3],[2,2],[1,2],[2,1],[2,3],[1,1]];
 const specialNames=['Cirujeo: bolsa y objetos','Pierna voladora','Flic Flac','Flan de Orujo','Golden Shower','Picada con sobreprecio','Limpieza extrema','Para vos, Vero','MIR','Ataque artístico','Grito supersónico','Respirador de Air Liquide'];
@@ -90,7 +99,13 @@ for(const p of projectiles){p.x+=p.dir*p.speed*dt;p.life-=dt;p.age+=dt;const tar
 projectiles=projectiles.filter(p=>p.life>0&&p.x>-100&&p.x<1060);effects.forEach(e=>e.t-=dt);effects=effects.filter(e=>e.t>0);announceTime-=dt;captureTrails(dt);updateHud()}
 function updateHud(){if($('timer'))$('timer').textContent=practice?'∞':Math.ceil(matchFrames/60);if($('p-meter'))$('p-meter').style.width=(practice?100:player.meter)+'%';if($('e-meter'))$('e-meter').style.width=(enemy?enemy.meter:0)+'%';if($('combo-counter'))$('combo-counter').textContent=comboCount>1?comboCount+' HIT COMBO':'';$('ph').style.width=player.hp/MAX_HP*100+'%';$('eh').style.width=enemy?enemy.hp/MAX_HP*100+'%':'0%';$('cool').textContent=player.cool>0?'Recarga: '+Math.ceil(player.cool/60)+' s':(practice?'Especial listo · Sin rival, sin límite de tiempo':'Especial listo');document.querySelector('[data-key=defend]').setAttribute('aria-pressed',String(player.blocking))}
 function poseFor(a){if(a.attack>0){const t=1-a.attack/a.attackLength;return t<.22?1:t<.78?(a.attackType==='kick'?5:4):0}if(a.y>2)return 3;if(a.blocking)return 0;if(a.moving)return [1,0,2,0][Math.floor(a.walk/7)%4];return 0}
-function drawSprite(im,row,col,x,y,size=330){ctx.drawImage(im,col*im.width/6,row*im.height/4,im.width/6,im.height/4,x-size/2,y-size,size,size)}
+function drawSprite(im,row,col,x,y,size=330){
+ const repaired=window.SpriteRepair?.get(im,row,col);
+ if(repaired?.canvas){
+  const {canvas,sw,sh,pad}=repaired;
+  ctx.drawImage(canvas,x-size/2-size*pad/sw,y-size-size*pad/sh,size*canvas.width/sw,size*canvas.height/sh);
+ }else ctx.drawImage(im,col*im.width/6,row*im.height/4,im.width/6,im.height/4,x-size/2,y-size,size,size);
+}
 function drawBench(a){if(a.id!==2||a.attackType!=='special'||a.attack<=0)return;const t=1-a.attack/a.attackLength;if(t>.7)return;ctx.save();ctx.globalAlpha=Math.min(1,(1-t/.7)*3);const x=a.x-a.dir*40;ctx.fillStyle='#cf9a31';ctx.strokeStyle='#513324';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(x-100,443,200,16,4);ctx.fill();ctx.stroke();ctx.strokeStyle='#e4b63f';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(x-70,459);ctx.lineTo(x-82,480);ctx.moveTo(x+70,459);ctx.lineTo(x+82,480);ctx.stroke();ctx.restore()}
 function drawFighter(a){const size=330,ground=463;drawBench(a);ctx.save();ctx.fillStyle='#16072266';ctx.beginPath();ctx.ellipse(a.x,ground+1,Math.max(20,48-a.y*.12),10,0,0,Math.PI*2);ctx.fill();ctx.translate(a.x,ground-a.y+(a.moving?Math.sin(a.walk*.45)*2:Math.sin(frame*.055+a.id)*1.5));ctx.scale(a.dir,1);
 if(ending&&a.hp<=0){ctx.rotate(-.9);ctx.globalAlpha=.82}
