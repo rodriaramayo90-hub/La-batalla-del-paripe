@@ -1,0 +1,10 @@
+#view-controls{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));z-index:210;display:flex;align-items:stretch;gap:7px}
+#view-controls .audio-toggle{position:static;margin:0;transform:none}
+#fullscreen-toggle{min-width:34px;font-size:20px;line-height:1;padding:6px 9px}
+#fullscreen-message{position:fixed;z-index:220;bottom:max(14px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);max-width:min(90vw,500px);width:max-content;padding:13px 17px;border:1px solid #ffe43a;background:#210d36;color:#fff3c1;font:14px/1.4 Arial;box-shadow:0 4px 20px #0009}
+@media(max-width:760px){#view-controls{top:max(8px,env(safe-area-inset-top));right:max(9px,env(safe-area-inset-right));gap:5px}#select .select-heading{padding-right:160px}}
+@media(orientation:landscape) and (max-height:550px){#view-controls{top:max(2px,env(safe-area-inset-top));right:max(4px,env(safe-area-inset-right));gap:4px}#fullscreen-toggle{font-size:16px;padding:3px 7px;min-width:28px}#fullscreen-message{font-size:12px;padding:9px 12px}}
+/* Reserve the sound label width so the fullscreen target cannot move mid-tap. */
+#view-controls #audio-toggle{width:132px;white-space:nowrap}
+@media(max-width:760px){#view-controls #audio-toggle{width:115px}}
+@media(orientation:landscape) and (max-height:550px){#view-controls #audio-toggle{width:105px}}
