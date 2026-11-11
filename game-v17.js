@@ -118,7 +118,7 @@ function activateTrexSuper(a){
  a.cast=++castSerial;exFlash=32;shake=Math.max(shake,8);
  announcement='¡TRANSFORMACIÓN JURÁSICA!';announceTime=92;
  effects.push({x:a.x,y:152-a.y,t:58,text:'🦖 ¡MODO T-REX!',color:'#e8ff58'});
- sfx('special',{id:1,pan:a.x/480-1});sfx('ready');audio.playVoice(1);haptic(35);
+ sfx('special',{id:1,pan:a.x/480-1});sfx('ready');audio.playVoice(1);if(a===player)haptic(35);
  return true;
 }
 function strike(a,b,type){
