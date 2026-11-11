@@ -1,0 +1,17 @@
+/* The same special description is available on every screen size. */
+#detail .dossier-special p{display:block;font-size:12px;line-height:1.4;margin:6px 0 0;white-space:normal;overflow-wrap:break-word}
+@media(max-width:520px){
+ #detail.dossier{flex:0 1 auto;min-height:0;max-height: min(44dvh,290px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+ #detail.dossier>.dossier-copy{min-height:min-content!important;justify-content:flex-start!important;padding:12px}
+ #detail h2{font-size:27px;margin:5px 0}
+ #detail .dossier-style{margin:4px 0 7px}
+ #detail .dossier-stats{margin:7px 0}
+ #detail .dossier-special{margin-top:7px;padding-top:7px}
+ #detail .dossier-special strong{font-size:22px;line-height:1.2}
+ #detail .dossier-special p{font-size:12px;line-height:1.4}
+}
+@media(orientation:landscape) and (max-height:550px){
+ #detail.dossier{overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+ #detail.dossier>.dossier-copy{min-height:min-content!important;justify-content:flex-start!important}
+ #detail .dossier-special p{font-size:11px;line-height:1.35}
+}
