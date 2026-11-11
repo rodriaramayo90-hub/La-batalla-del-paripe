@@ -1,0 +1,2 @@
+.ctl.charging{background:linear-gradient(to top,#b251df var(--charge),#4c194c var(--charge));border-color:#e59dff}.ctl.charge-ready{background:#ffe437;color:#2b0d36;border-color:#fff4aa;box-shadow:0 0 15px #ffe43788}.ctl.charging small{color:inherit}
+.ctl{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
