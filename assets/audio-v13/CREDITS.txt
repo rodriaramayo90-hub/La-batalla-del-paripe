@@ -1,0 +1,4 @@
+La Batalla del Paripe v13
+Voices: Microsoft es-AR-ElenaNeural (women), es-AR-TomasNeural (men), generated using Edge TTS. Original character phrases retained.
+Battle theme: original 32-bar electro-rock composition in D minor, 136 BPM, rendered for this game.
+T-Rex: original designed nonverbal creature shriek. No spoken roar.
