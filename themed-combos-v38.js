@@ -5,7 +5,7 @@ const THEMED_FINISHER_ART={
 };
 function finisherRenderCell(a){return THEMED_FINISHER_ART[a.id+':'+a.finisherVariant]||[...FINISHER_ART_MAP[a.id],a.finisherVariant===1?3:0];}
 const DIVE_MASK_DURATION=300,DIVE_MASK_REDUCTION=.35;
-function activateDiveMask(a){a.diveMask=DIVE_MASK_DURATION;advantageFeedback(a,'¡MÁSCARA: PROTECCIÓN!','#a7f1fa');sfx('ready');}
+function activateDiveMask(a){a.diveMask=DIVE_MASK_DURATION;sfx('ready');}
 function resolveThemedFinisher(a,b,elapsed){
  const p=finisherProfile(a);if(p.style==='diveMask'){
   if(!a.hit&&elapsed>=finisherData(a).start){a.hit=true;a.connected=true;activateDiveMask(a);recordCombo(a,{x:a.x,y:a.y});}return true;
