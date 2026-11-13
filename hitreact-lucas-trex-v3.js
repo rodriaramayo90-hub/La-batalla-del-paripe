@@ -12,7 +12,7 @@ const FRAME_COUNT=5;
 const atlas=new Map();
 const toggleState={active:true,ready:false,lastHit:'',lastTime:0,issue:''};
 const PHASES={
-  high:['hurt','hurt','held','hurt','guard'],
+  high:['hurt','hurt','shield','hurt','guard'],
   mid:['forward','forward','low','shield','guard'],
   low:['low','low','low','shield','guard'],
   heavy:['hurt','fall','fall','hurt','guard']
