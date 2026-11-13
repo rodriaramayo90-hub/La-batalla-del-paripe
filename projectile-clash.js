@@ -54,9 +54,19 @@ function stepProjectileClash(dt) {
     }
     announcement='¡GANA EL CHOQUE '+(owner===player?'1P':'2P')+'!';announceTime=80;
   }
+  projectiles = projectiles.filter(p => p.life > 0);
   projectileClash=null;
   clearKeys();
   sfx('release');
+}
+function clashPunchButton(slot) {
+  const pads = availablePads();
+  const control = LOCAL.active ? LOCAL.controls[slot] : null;
+  const pad = LOCAL.active
+    ? pads.find(p => control === 'pad:' + p.index)
+    : pads[0];
+  if (pad) return isPS4(pad) ? '□' : /nintendo|switch|joy-con/i.test(pad.id) ? 'Y' : 'X';
+  return slot === 1 ? 'Z' : 'J';
 }
 function drawProjectileClash() {
   const c=projectileClash;
@@ -69,12 +79,17 @@ function drawProjectileClash() {
     ctx.beginPath();ctx.moveTo(c.x+Math.cos(angle)*radius,c.y+Math.sin(angle)*radius);
     ctx.lineTo(c.x+Math.cos(angle)*(radius+15),c.y+Math.sin(angle)*(radius+15));ctx.stroke();
   }
-  ctx.fillStyle='#180d27ee';ctx.fillRect(180,25,600,88);
-  ctx.fillStyle='#ffe38a';ctx.textAlign='center';ctx.font='bold 23px Arial';
-  ctx.fillText('¡PULSÁ PIÑA REPETIDAMENTE!',480,54);
-  ctx.font='bold 18px Arial';
-  const first=LOCAL.active&&LOCAL.controls[0].startsWith('pad:')?'□ / X':'J / botón PIÑA';
-  const second=LOCAL.active?(LOCAL.controls[1].startsWith('pad:')?'□ / X':'Z'):ONLINE.active?'PIÑA':'CPU';
-  ctx.fillText('1P '+first+' · '+c.taps[0]+'     '+Math.ceil(c.time/60)+' s     2P '+second+' · '+c.taps[1],480,87);
+  const twoPlayers = LOCAL.active;
+  ctx.fillStyle='#180d27ee';
+  ctx.fillRect(140,25,680,twoPlayers?88:55);
+  ctx.fillStyle='#ffe38a';
+  ctx.textAlign='center';
+  ctx.font='bold 23px Arial';
+  if (twoPlayers) {
+    ctx.fillText('1P · PULSAR «'+clashPunchButton(0)+'» REPETIDAMENTE',480,57);
+    ctx.fillText('2P · PULSAR «'+clashPunchButton(1)+'» REPETIDAMENTE',480,92);
+  } else {
+    ctx.fillText('PULSAR «'+clashPunchButton(0)+'» REPETIDAMENTE',480,60);
+  }
   ctx.restore();
 }
