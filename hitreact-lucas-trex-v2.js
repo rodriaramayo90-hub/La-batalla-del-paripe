@@ -228,6 +228,19 @@ function initPanel(){
     LOCAL.selected[0]=1;LOCAL.selected[1]=3;
     openLocal();
   });
+  const cpu=document.getElementById('beta-v2-cpu');
+  if(cpu)cpu.addEventListener('click',async()=>{
+    // Solo test option: T-Rex against Lucas (CPU) in the current Work engine.
+    // Normal local tournaments and rematches are preserved.
+    if(typeof unlockAudio==='function')unlockAudio();
+    await assetReady;
+    if(typeof leaveTournament==='function')leaveTournament();
+    if(typeof leaveLocal==='function')leaveLocal();
+    selected=1;queue=Array(11).fill(3);battle=0;practice=false;
+    show('game');newBattle();
+    const label=document.getElementById('arena-label');
+    if(label)label.textContent='PRUEBA V2 · T-REX VS LUCAS (CPU)';
+  });
   window.PARIPE_HITREACTIONS_V2={
     version:2,characterIds:[1,3],types:TYPES,
     get ready(){return loaded;},get enabled(){return enabledState.value;},
