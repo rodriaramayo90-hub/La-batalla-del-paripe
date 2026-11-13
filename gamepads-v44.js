@@ -17,6 +17,7 @@ function menuPulse(index,key,on,now){const id=index+':'+key;if(!on){PAD.menuRepe
 function navigatePad(p,now,s,old){
  if(mode==='game'&&ROUND_END.active&&ROUND_END.phase!=='result')return;
  if(now<PAD.menuLock)return;
+ if(mode==='tournament-screen'&&TOURNAMENT.phase==='roster'&&s.back&&!old.back){closeTournamentRoster();return;}
  if(mode==='tournament-screen'&&TOURNAMENT.phase==='sides'){tournamentPadInput(p,s,old);return;}
  const pressed=k=>s[k]&&!old[k];
  if(mode==='local-screen'){

@@ -41,18 +41,54 @@ function tournamentPhase(phase, focus) {
   $(focus).focus();
 }
 
+function tournamentPortrait(fighter) {
+  return '<span class="tournament-portrait" aria-hidden="true">' + portraitMarkup(fighter) + '</span>';
+}
+
 function tournamentSetupPlayers() {
   const list = $('tournament-players');
-  const previous = Array.from(list.querySelectorAll('select'), select => select.value);
+  const previous = Array.from(list.children, card => Number(card.dataset.fighter));
   list.replaceChildren(...Array.from({length: Number($('tournament-count').value)}, (_, index) => {
-    const label = document.createElement('label');
-    const select = document.createElement('select');
-    label.textContent = 'Jugador ' + (index + 1);
-    fighters.forEach((fighter, id) => select.add(new Option(fighter[0], id)));
-    select.value = previous[index] ?? String(index);
-    label.append(select);
-    return label;
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.id = 'tournament-player-' + index;
+    card.className = 'tournament-player-card';
+    setTournamentPlayer(card, index, previous[index] ?? index);
+    card.addEventListener('click', () => openTournamentRoster(index));
+    return card;
   }));
+}
+
+function setTournamentPlayer(card, index, fighter) {
+  card.dataset.fighter = fighter;
+  card.innerHTML = tournamentPortrait(fighter) + '<span><small>Jugador ' + (index + 1) +
+    '</small><strong>' + fighters[fighter][0] + '</strong></span>';
+}
+
+function openTournamentRoster(index) {
+  const player = $('tournament-player-' + index);
+  const selected = Number(player.dataset.fighter);
+  TOURNAMENT.picking = index;
+  $('tournament-roster-title').textContent = 'Elegí luchador · Jugador ' + (index + 1);
+  $('tournament-roster').replaceChildren(...fighters.map((fighter, id) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.id = 'tournament-fighter-choice-' + id;
+    card.className = 'tournament-fighter-choice';
+    card.setAttribute('aria-pressed', String(id === selected));
+    card.innerHTML = tournamentPortrait(id) + '<strong>' + fighter[0] + '</strong>';
+    card.addEventListener('click', () => {
+      setTournamentPlayer(player, index, id);
+      sfx('select');
+      closeTournamentRoster();
+    });
+    return card;
+  }));
+  tournamentPhase('roster', 'tournament-fighter-choice-' + selected);
+}
+
+function closeTournamentRoster() {
+  tournamentPhase('setup', 'tournament-player-' + TOURNAMENT.picking);
 }
 
 function leaveTournament() {
@@ -71,8 +107,8 @@ function openTournament() {
 }
 
 function startTournament() {
-  const entrants = Array.from($('tournament-players').querySelectorAll('select'), (select, index) => ({
-    number: index + 1, fighter: Number(select.value)
+  const entrants = Array.from($('tournament-players').children, (card, index) => ({
+    number: index + 1, fighter: Number(card.dataset.fighter)
   }));
   TOURNAMENT.rounds = buildTournament(entrants);
   TOURNAMENT.champion = null;
@@ -86,30 +122,66 @@ function showTournamentBracket() {
   TOURNAMENT.current = null;
   const board = $('tournament-bracket');
   board.replaceChildren();
+  const depth = TOURNAMENT.rounds.length - 1;
+  const rows = Math.max(1, TOURNAMENT.rounds[0].length / 2);
+  const tree = document.createElement('div');
+  tree.className = 'tournament-tree';
+  tree.style.setProperty('--columns', 2 * depth + 1);
+  tree.style.setProperty('--rows', rows);
   TOURNAMENT.rounds.forEach((matches, round) => {
-    const column = document.createElement('section');
-    const heading = document.createElement('h3');
-    heading.textContent = tournamentRoundName(round);
-    column.append(heading);
+    const final = round === depth;
+    const half = matches.length / 2;
+    const span = final ? rows : 2 ** round;
+    for (const column of final ? [depth + 1] : [round + 1, 2 * depth + 1 - round]) {
+      const heading = document.createElement('h3');
+      heading.textContent = tournamentRoundName(round);
+      heading.style.gridColumn = column;
+      tree.append(heading);
+    }
     matches.forEach((match, index) => {
+      const right = !final && index >= half;
+      const position = final ? 0 : index % half;
+      const slot = document.createElement('div');
+      slot.className = 'tournament-match-slot';
+      slot.style.gridColumn = right ? 2 * depth + 1 - round : round + 1;
+      slot.style.gridRow = (2 + position * span) + ' / span ' + span;
+      if (!final) {
+        slot.classList.add(right ? 'to-left' : 'to-right');
+        if (round < depth - 1) slot.classList.add(position % 2 ? 'join-up' : 'join-down');
+      }
       const card = document.createElement('article');
+      if (final) card.classList.add('tournament-final');
       if (!match.winner && !TOURNAMENT.current && match.players.every(Boolean)) {
         TOURNAMENT.current = {round, index, match};
         card.classList.add('tournament-next');
+        card.setAttribute('aria-label', 'Próximo combate');
       }
       match.players.forEach(entrant => {
         const row = document.createElement('div');
-        row.textContent = entrant ? tournamentLabel(entrant) : match.winner ? 'Pase directo' : 'Por definir';
+        row.className = 'tournament-entrant';
+        if (entrant) {
+          row.innerHTML = tournamentPortrait(entrant.fighter);
+          const label = document.createElement('span');
+          label.textContent = tournamentLabel(entrant);
+          row.append(label);
+        } else {
+          row.textContent = match.winner ? 'Pase directo' : 'Por definir';
+          row.classList.add('tournament-empty');
+        }
         if (entrant && entrant === match.winner) {
-          row.className = 'tournament-winner';
-          row.textContent = '✓ ' + row.textContent;
+          row.classList.add('tournament-winner');
+          const check = document.createElement('span');
+          check.textContent = '✓';
+          check.setAttribute('aria-label', 'Ganador');
+          row.append(check);
         }
         card.append(row);
       });
-      column.append(card);
+      slot.append(card);
+      tree.append(slot);
     });
-    board.append(column);
   });
+  board.append(tree);
   const champion = TOURNAMENT.champion;
   $('tournament-result').textContent = champion ? '🏆 Campeón · ' + tournamentLabel(champion) : '';
   $('tournament-result').hidden = !champion;
@@ -129,6 +201,8 @@ function openTournamentSides() {
   $('tournament-side-status').textContent = '';
   tournamentPhase('sides', 'tournament-sides-title');
   const players = TOURNAMENT.current.match.players;
+  $('tournament-portrait-left').innerHTML = tournamentPortrait(players[0].fighter);
+  $('tournament-portrait-right').innerHTML = tournamentPortrait(players[1].fighter);
   $('tournament-fighter-left').textContent = '1P · ' + tournamentLabel(players[0]);
   $('tournament-fighter-right').textContent = '2P · ' + tournamentLabel(players[1]);
   renderTournamentSides();
