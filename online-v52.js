@@ -16,7 +16,7 @@ function onlineLobby(room){ONLINE.data=room;const me=room.players.find(p=>p.role
 function onlineMessage(m){
  if(m.type==='lobby'){ONLINE.connected=true;onlineLobby(m.room);}
  if(m.type==='disconnected')onlineDisconnected('Tu amigo salió de la sala. Creá otra para volver a jugar.');
- if(m.type==='input'&&ONLINE.role===0){ONLINE.lastInput=performance.now();const i=m.input||{};const jumpPending=ONLINE.remote.keys.jump;ONLINE.remote.keys=Object.fromEntries(['left','right','jump','down','defend'].map(k=>[k,!!i.keys?.[k]]));ONLINE.remote.keys.jump=jumpPending||!!i.keys?.jump;if(i.keys?.jump&&i.keys?.defend)ONLINE.remote.escapeTap=true;for(const action of (Array.isArray(i.actions)?i.actions:[]).slice(0,6))if(['punch','kick','special','grab'].includes(action.type))ONLINE.remote.actions.push({...action,ttl:48});ONLINE.remote.actions=ONLINE.remote.actions.slice(-6);}
+ if(m.type==='input'&&ONLINE.role===0){ONLINE.lastInput=performance.now();const i=m.input||{};const jumpPending=ONLINE.remote.keys.jump;ONLINE.remote.keys=Object.fromEntries(['left','right','jump','down','defend'].map(k=>[k,!!i.keys?.[k]]));ONLINE.remote.keys.jump=jumpPending||!!i.keys?.jump;if(i.keys?.jump&&i.keys?.defend)ONLINE.remote.escapeTap=true;for(const action of (Array.isArray(i.actions)?i.actions:[]).slice(0,6))if(action.type==='clash'&&projectileClash)clashTap(1);else if(['punch','kick','special','grab'].includes(action.type))ONLINE.remote.actions.push({...action,ttl:48});ONLINE.remote.actions=ONLINE.remote.actions.slice(-6);}
  if(m.type==='start')onlineStart(m.room);
  if(m.type==='frame'&&ONLINE.role===1&&ONLINE.active&&m.round===ONLINE.round){onlineApply(m.state);ONLINE.lastFrame=performance.now();}
  if(m.type==='result'){
@@ -54,8 +54,8 @@ function onlineRemoteStep(dt){
   consumeInput(a,b,i.actions);
  }
 }
-function onlinePublish(){if(ONLINE.role!==0||!ONLINE.active)return;const pack=a=>({...a,castHits:[...a.castHits]});onlineSend({type:'frame',round:ONLINE.round,state:{p:pack(player),e:pack(enemy),projectiles:projectiles.map(p=>({...p,owner:p.owner===player?0:1})),effects,frame,matchFrames,introFrames,ending,announcement,announceTime,stage:currentStage,roundEnd:packRoundEnd(),events:ONLINE.events.splice(0)}});}
-function onlineApply(s){
+function onlinePublish(){if(ONLINE.role!==0||!ONLINE.active)return;const pack=a=>({...a,castHits:[...a.castHits]});onlineSend({type:'frame',round:ONLINE.round,state:{p:pack(player),e:pack(enemy),projectiles:projectiles.map(p=>({...p,owner:p.owner===player?0:1})),clash:projectileClash?{x:projectileClash.x,y:projectileClash.y,time:projectileClash.time,elapsed:projectileClash.elapsed,taps:projectileClash.taps}:null,effects,frame,matchFrames,introFrames,ending,announcement,announceTime,stage:currentStage,roundEnd:packRoundEnd(),events:ONLINE.events.splice(0)}});}
+function onlineApply(s){projectileClash=s.clash?{...s.clash,taps:[s.clash.taps[1],s.clash.taps[0]]}:null;
  if(Number.isInteger(s.stage)&&s.stage!==currentStage)setStage(s.stage);
  const unpack=a=>({...a,castHits:new Set(a.castHits)});enemy=unpack(s.p);player=unpack(s.e);projectiles=s.projectiles.map(p=>({...p,owner:p.owner===0?enemy:player}));effects=s.effects;frame=s.frame;matchFrames=s.matchFrames;introFrames=s.introFrames;ending=s.ending;announcement=s.announcement;announceTime=s.announceTime;applyRoundEnd(s.roundEnd);trails=[];for(const e of s.events||[]){if(e.voice!==undefined)audio.playVoice(e.voice);else audio.cue(e.type,e.opts);}updateHud();}
 function onlineTick(t){

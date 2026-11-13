@@ -19,6 +19,7 @@ function handleHumanKeyUp(e){
  if(!key)return;e.preventDefault();humanInput(slot,key,false,'key-'+e.code);
 }
 function humanInput(slot,key,pressed,source){
+ if(mode==='game'&&projectileClash){if(pressed&&key==='punch')clashTap(slot);return;}
  if(mode!=='game'||slot===1&&!LOCAL.active||LOCAL.paused||PAD.soloPause)return;
  const a=slot===0?player:enemy;if(!a)return;const state=slot===0?keys:SECOND.keys;
  if(['punch','kick'].includes(key)){
