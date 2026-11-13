@@ -108,7 +108,7 @@ hit=function(target,damage,push,kind=-3,impactY=target?280-target.y:280,info=nul
 };
 const originalDrawSprite=drawSprite;
 drawSprite=function(im,row,col,x,y,size=330){
-  const a=renderedFighter;
+  const a=window.renderedFighter||null;
   if(ready&&enabled&&a&&TEST_FIGHTERS.has(a.id)&&a.diveMask<=0&&
      size>=300&&size<=335){
     const [sheet,r]=actionMap[a.id];
@@ -184,6 +184,14 @@ function attachControls(){
   toggle.addEventListener('click',()=>{
     enabled=!enabled;redraw();
     // A/B switches do not modify combat balance, cooldowns or HP.
+  });
+  const quick=document.getElementById('preview-quick-start');
+  if(quick)quick.addEventListener('click',()=>{
+    // Select exactly the two test subjects; player can choose gamepads in
+    // the original local-mode setup screen.
+    if(typeof LOCAL==='undefined'||typeof openLocal!=='function')return;
+    LOCAL.selected[0]=1;LOCAL.selected[1]=3;
+    openLocal();
   });
   redraw();
 }
