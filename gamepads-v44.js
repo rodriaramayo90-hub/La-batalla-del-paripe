@@ -17,6 +17,7 @@ function menuPulse(index,key,on,now){const id=index+':'+key;if(!on){PAD.menuRepe
 function navigatePad(p,now,s,old){
  if(mode==='game'&&ROUND_END.active&&ROUND_END.phase!=='result')return;
  if(now<PAD.menuLock)return;
+ if(mode==='tournament-screen'&&TOURNAMENT.phase==='sides'){tournamentPadInput(p,s,old);return;}
  const pressed=k=>s[k]&&!old[k];
  if(mode==='local-screen'){
   const role=padSlot(p,availablePads());if(role>=0){if(menuPulse(p.index,'left',s.left,now)||menuPulse(p.index,'right',s.right,now)){localCharacter(role,(LOCAL.selected[role]+(s.left?-1:1)+fighters.length)%fighters.length);$('local-character-'+role).value=LOCAL.selected[role];}}
@@ -41,7 +42,7 @@ function pollGamepads(now){
  const pads=availablePads(),signature=pads.map(p=>p.index+':'+p.id).join('|');
  if(signature!==PAD.signature){
   const previous=Array.from(PAD.previous.keys());for(const index of previous)if(!pads.some(p=>p.index===index)){releasePad(index);PAD.previous.delete(index);PAD.seen.delete(index);if(mode==='game'&&!LOCAL.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active))pauseSoloGame('Mando desconectado. Reconectalo o seguí con el teclado.');if(LOCAL.active&&LOCAL.controls.includes('pad:'+index))pauseLocal('Se desconectó el mando '+(index+1)+'. Reconectalo para continuar.');}
-  PAD.signature=signature;refreshPadStatus();if(mode==='local-screen')refreshLocalControls(pads,!LOCAL.controlsManual&&LOCAL.controls.every(v=>v==='keyboard'));
+  PAD.signature=signature;refreshPadStatus();if(typeof syncTournamentPads==='function')syncTournamentPads(pads);if(mode==='local-screen')refreshLocalControls(pads,!LOCAL.controlsManual&&LOCAL.controls.every(v=>v==='keyboard'));
  }
  if(mode!==PAD.lastMode||ending!==PAD.lastEnding){PAD.menuLock=now+260;PAD.lastMode=mode;PAD.lastEnding=ending;PAD.menuRepeat.clear();}
  for(const p of pads){
