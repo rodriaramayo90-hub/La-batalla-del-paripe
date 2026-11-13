@@ -170,3 +170,29 @@
   gap: 8px;
 }
 .tournament-sides .tournament-neutral { background: #20102d; text-align: center; }
+#tournament-screen .tournament-control-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 54px;
+  min-height: 44px;
+  margin: 2px;
+  padding: 2px 9px;
+  border: 1px solid #a777bc;
+  border-radius: 7px;
+  background: #35164b;
+  color: #fff2cc;
+  vertical-align: middle;
+  font-size: 23px;
+}
+.tournament-control-icon small { font-size: 13px; font-weight: bold; }
+button.tournament-control-icon { cursor: pointer; }
+#tournament-screen button.tournament-control-icon:hover,
+#tournament-screen button.tournament-control-icon[aria-pressed="true"],
+#tournament-screen .control-ready .tournament-control-icon {
+  border-color: #ffda75;
+  background: #533556;
+}
+#tournament-screen p.control-ready { color: #ffda75; }
+.tournament-sides p > .tournament-control-icon { margin-right: 7px !important; }

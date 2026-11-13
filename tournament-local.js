@@ -215,19 +215,28 @@ function toggleTournamentKeyboard(slot) {
   else assignTournamentSide(id, slot);
 }
 
-function tournamentDevice(id) {
-  return id === 'keyboard-left' ? 'Teclado ←' : id === 'keyboard-right' ? 'Teclado D' : 'Mando ' + (Number(id.slice(4)) + 1);
+function tournamentPadIcon(id) {
+  const number = Number(id.slice(4)) + 1;
+  return '<span class="tournament-control-icon" role="img" aria-label="Mando ' + number +
+    '" title="Mando ' + number + '">🎮 <small>' + number + '</small></span>';
 }
 
 function renderTournamentSides() {
   const assignments = [...TOURNAMENT.sides];
   for (const [slot, label] of ['left', 'right'].entries()) {
     const device = assignments.find(([, side]) => side === slot)?.[0];
-    $('tournament-side-' + label).textContent = device ?
-      tournamentDevice(device) + (TOURNAMENT.ready.has(device) ? ' · Listo' : ' · Confirmá') : 'Libre';
+    const pad = device?.startsWith('pad:');
+    const ready = !!device && (!pad || TOURNAMENT.ready.has(device));
+    const keyboard = $('tournament-keyboard-' + label);
+    keyboard.hidden = !!pad;
+    keyboard.setAttribute('aria-pressed', String(ready && !pad));
+    const status = $('tournament-side-' + label);
+    const message = ready ? 'Listo' : pad ? 'Confirmá' : 'Libre';
+    status.innerHTML = (pad ? tournamentPadIcon(device) : '') + '<span>' + message + '</span>';
+    status.classList.toggle('control-ready', ready);
   }
   const available = availablePads().map(pad => 'pad:' + pad.index);
-  $('tournament-neutral').textContent = available.filter(id => !TOURNAMENT.sides.has(id)).map(tournamentDevice).join(' · ') || '—';
+  $('tournament-neutral').innerHTML = available.filter(id => !TOURNAMENT.sides.has(id)).map(tournamentPadIcon).join(' ') || '—';
   $('tournament-start').disabled = assignments.length < 2 ||
     assignments.some(([id]) => id.startsWith('pad:') && !TOURNAMENT.ready.has(id)) || TOURNAMENT.loading;
 }
