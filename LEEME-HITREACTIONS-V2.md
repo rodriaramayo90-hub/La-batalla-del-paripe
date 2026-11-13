@@ -10,10 +10,10 @@ Base: commit \`031bce22e0aa9ee8ee7aa604108987bb54d278fd\` (Work, 13/11/2026; inc
 2. Extraer TODO el ZIP (no extraer solo el HTML; se necesitan \`assets\` y los JS).
 3. Ejecutar \`INICIAR-BETA-HITREACTIONS-V2.bat\` (requiere Python instalado) o ejecutar dentro de la carpeta \`py -m http.server 8766 --bind 127.0.0.1\`.
 4. Abrir \`http://127.0.0.1:8766/preview-hitreactions-lucas-trex-v2.html\`.
-5. Pulsar **T-REX VS LUCAS**, seleccionar mandos o teclado en la configuración local, y pulsar **¡A PELEAR!**.
+5. Si jugás solo, pulsar **VS CPU**: controlás a T-Rex y Lucas es la CPU. Si son dos jugadores, pulsar **2 JUGADORES**, configurar mandos/teclados y **¡A PELEAR!**.
 6. Durante la pelea pulsar **REACCIONES NUEVAS / REACCIONES ORIGINALES** para comprobar el antes/después sin cambiar las reglas del juego.
 
-También se puede entrar en Arcade contra CPU. Solo T-Rex (id 1) y Lucas (id 3) utilizan las reacciones nuevas; los demás luchadores conservan las suyas.
+El botón **VS CPU** inicia directamente un duelo de T-Rex contra Lucas con la IA del motor de Work; permite probarlo sin otro jugador. Solo T-Rex (id 1) y Lucas (id 3) utilizan las reacciones nuevas; los demás luchadores conservan las suyas.
 
 IMPORTANTE: el archivo \`index.html\` es el que usa GitHub Pages. Esta beta utiliza una página propia. No abrir el archivo con \`file://\`: el atlas de sprites original utiliza Canvas y necesita servidor HTTP.
 
