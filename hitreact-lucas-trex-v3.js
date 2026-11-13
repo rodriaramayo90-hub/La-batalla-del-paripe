@@ -77,18 +77,45 @@ function renderSource(id,name){
  return c;
 }
 function cacheFighter(id){
- const sources={};
- for(const name of new Set(Object.values(PHASES).flat()))sources[name]=renderSource(id,name);
- const neutral=bounds(sources.guard);
- if(!neutral||neutral.height<150)throw Error('No complete guard sprite for id '+id);
- // Calibrate each standing DRAWN pose by its feet (baseline), not its box
- // height; a crouched fighter should naturally be shorter than a standing one.
- // Reject truncated crops before playing.
- for(const key of ['hurt','forward','shield','fall','low','lowRecover']){
-   const b=bounds(sources[key]);
-   if(!b||b.width<80||b.height<105)throw Error('Missing full-body pose '+id+' '+key);
+ const sources={},issues=[];
+ const names=new Set(Object.values(PHASES).flat());
+ // This is a visual experiment: a missing/shortened animation must NOT
+ // abort the entire game. Work's source sheets have different proportions.
+ // The v3.0 strict height threshold incorrectly treated valid bent/low
+ // poses as fatal. Render each independently and use a safe full-body pose.
+ for(const name of names){
+   try{
+     const image=renderSource(id,name);
+     if(!image)throw Error('renderSource returned no canvas');
+     // Alpha inspection can fail on a restricted Canvas implementation.
+     // It is diagnostic only, not a prerequisite to play.
+     let bb=null;
+     try{bb=bounds(image)}catch(scanErr){
+       issues.push(name+': lectura de pixeles no disponible ('+scanErr.message+')');
+     }
+     if(!bb&&image){
+       issues.push(name+': pose transparente; se utilizará una alternativa');
+       sources[name]=null;
+     }else sources[name]=image;
+   }catch(e){
+     sources[name]=null;
+     issues.push(name+': '+(e?.message||String(e)));
+   }
  }
- atlas.set(id,{sources,referenceHeight:neutral.height});
+ let neutral=sources.guard||sources.forward||sources.hurt||sources.shield;
+ if(!neutral){
+   // Last resort: try the known-good normal sheet. Only this is fatal.
+   try{
+     const [index,row]=atlasMap[id];neutral=createSurface();
+     drawBase(neutral,atlases[index],row,0);
+     issues.push('usando pose normal como fallback');
+   }catch(e){throw Error('No hay imagen base de '+id+': '+(e?.message||e));}
+ }
+ sources.guard=neutral;
+ for(const name of names)if(!sources[name])sources[name]=neutral;
+ let height=0;try{height=bounds(neutral)?.height||0}catch(_){}
+ atlas.set(id,{sources,referenceHeight:height});
+ return issues;
 }
 function getKind(attacker,damage,push,moveKind,info){
  const level=info?.level||(moveKind===-3?(attacker?.level||'mid'):'mid');
@@ -203,15 +230,31 @@ window.PARIPE_BETA3={
  activate
 };
 assetReady.then(()=>{
- for(const id of IDS)cacheFighter(id);
- toggleState.ready=true;
+ const issues=[];
+ for(const id of IDS){
+   try{
+     const warnings=cacheFighter(id);
+     if(warnings.length)issues.push((id===1?'T-Rex':'Lucas')+': '+warnings.join('; '));
+   }catch(e){
+     issues.push((id===1?'T-Rex':'Lucas')+': '+(e?.message||String(e)));
+   }
+ }
+ toggleState.ready=atlas.size>0;
+ toggleState.issue=issues.join(' | ');
  const st=document.getElementById('beta-v3-status');
- if(st)st.textContent='LISTA · 2 PERSONAJES · 4 REACCIONES';
- console.info('[BETA 3] Authored whole-body reaction sequences ready.');
+ if(st){
+   st.textContent=toggleState.ready
+     ?(issues.length?'LISTA CON AVISOS · VER DETALLE':'LISTA · T-REX Y LUCAS')
+     :'ERROR: '+(issues[0]||'No se generaron poses');
+   st.title=issues.join('\n')||'Todas las poses preparadas';
+ }
+ console.info('[BETA 3] Pose sheets prepared. Fighter count:',atlas.size);
+ if(issues.length)console.warn('[BETA 3] Diagnostic warnings:',issues);
 }).catch(e=>{
- toggleState.issue=String(e);
+ const reason=e?.message||String(e);
+ toggleState.issue='Fallo al preparar recursos originales: '+reason;
  const st=document.getElementById('beta-v3-status');
- if(st)st.textContent='ERROR AL CARGAR POSES';
- console.error('[BETA 3] Could not prepare full-body reactions',e);
+ if(st){st.textContent='ERROR: '+reason.slice(0,105);st.title=toggleState.issue;}
+ console.error('[BETA 3] Original game assets were not ready:',e);
 });
 })();
