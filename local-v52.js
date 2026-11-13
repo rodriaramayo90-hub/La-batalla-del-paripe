@@ -59,7 +59,7 @@ function drawSecondCharge(a){const h=[...SECOND.charges.values()].sort((a,b)=>b.
 function localCharacter(slot,id){LOCAL.selected[slot]=id;renderLocalCard(slot);sfx('select');}
 function localControl(slot,value){LOCAL.controlsManual=true;LOCAL.controls[slot]=value;renderLocalCard(slot);$('local-status').textContent='';}
 function renderLocalCard(slot){const id=LOCAL.selected[slot],f=fighters[id];$('local-portrait-'+slot).innerHTML=portraitMarkup(id);$('local-style-'+slot).textContent=f[1];const pad=LOCAL.controls[slot].startsWith('pad:');$('local-help-'+slot).textContent=pad?'Cruceta / stick · □ piña · △ patada · ○ especial · L1 defensa':slot===0?'← → mover · ↑ saltar · ↓ agacharse · J piña · K patada · ESPACIO especial · MAYÚS defensa · F agarre':'A / D mover · W saltar · S agacharse · Z piña · X patada · C especial · V defensa · B agarre';
- const label=seq=>comboLabel(seq).replaceAll('J',pad?'□':slot===1?'Z':'J').replaceAll('K',pad?'△':slot===1?'X':'K');
+ const label=comboLabel;
  $('local-combos-'+slot).innerHTML=COMBO_ROUTES[id].map(r=>`<p><b>${r[0]}</b><span>${label(r[1])}</span></p>`).join('');}
 function refreshLocalControls(pads,initial=false){
  if(initial){LOCAL.controls=pads.length>=2?['pad:'+pads[0].index,'pad:'+pads[1].index]:pads.length?['keyboard','pad:'+pads[0].index]:['keyboard','keyboard'];}

@@ -1,0 +1,87 @@
+/* Scale the menus with large displays, including TVs running a 1080p browser. */
+@media (min-width: 900px) and (min-height: 600px) {
+  :root {
+    --readable-text: clamp(18px, 1.3vw, 50px);
+    --readable-small: clamp(16px, 1.1vw, 42px);
+    --readable-title: clamp(28px, 2vw, 76px);
+  }
+  body { font-size: var(--readable-text); }
+  #app { padding: 2vh 2vw; }
+  .screen, #local-screen, #tournament-screen { width: 96vw; max-width: none; }
+  #menu.menu-screen { width: 96vw; }
+  #menu .menu-actions { width: min(90%, 38vw); max-width: none; }
+  #menu .menu-actions .btn, .btn, .select-actions .btn,
+  .overlay .btn, .local-buttons .btn {
+    font-size: var(--readable-text);
+    min-height: clamp(48px, 5.5vh, 110px);
+    padding: .55em 1em;
+  }
+  #menu .menu-lead { font-size: var(--readable-text); }
+  #menu .menu-copy > .eyebrow, .select-heading .eyebrow,
+  #select .select-instruction, .footer-hint, #sound-test,
+  .pad-status, #menu .pad-status, .local-footnote {
+    font-size: var(--readable-small);
+    max-width: 60vw;
+    line-height: 1.35;
+  }
+  #select .select-heading h1, #local-screen h1 { font-size: clamp(38px,3vw,112px); }
+  #select .select-body { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 1.5vw; }
+  #roster { gap: .7vw; }
+  #roster .fighter { padding: .4vw; }
+  #roster .fighter b { font-size: var(--readable-text); margin-top: .35em; }
+  #roster .fighter small { font-size: var(--readable-small); }
+  #detail .dossier-copy { padding: 1.2vw; }
+  #detail h2 { font-size: clamp(38px,3vw,110px); }
+  #detail .dossier-kicker, #detail .dossier-special small { font-size: var(--readable-small); }
+  #detail .dossier-style, #detail .dossier-special p,
+  #detail .combo-routes p, #detail .combo-routes p > span,
+  #detail .combat-guide { font-size: var(--readable-text) !important; line-height: 1.35; }
+  #detail .combo-routes p { margin: .65em 0; }
+  #detail .dossier-special strong { font-size: var(--readable-title); line-height: 1.15; }
+  #detail .stat-row { font-size: var(--readable-small); gap: .5em; }
+  #detail .stat-row > span:first-child { width: 5.5em; }
+  #detail .stat-track { height: .45em; }
+  .select-footer { padding-top: 1vh; }
+  .select-actions { gap: 1vw; }
+  #local-screen { padding-top: 5vh; }
+  .local-card { grid-template-columns: 26% minmax(0,1fr); gap: 1vw; padding: 1.2vw; }
+  #local-screen label, #local-screen select, .local-card-copy > p,
+  .local-combos p, #local-status { font-size: var(--readable-text); }
+  .local-combos p { flex-direction: column; gap: .2em; }
+  .local-control-help { font-size: var(--readable-small); }
+  #tournament-screen { padding: 3vh 2vw; }
+  #tournament-players { grid-template-columns: repeat(auto-fit,minmax(9vw,1fr)); }
+  #tournament-roster { grid-template-columns: repeat(6,minmax(0,1fr)); }
+  #tournament-screen h1 { font-size: clamp(38px,3vw,112px); }
+  .tournament-entrant { font-size: var(--readable-small); min-height: 3.2em; }
+  .tournament-entrant .tournament-portrait { flex-basis: 3em; }
+  .tournament-tree {
+    --gap: 2vw;
+    grid-template-columns: repeat(var(--columns),minmax(10vw,1fr));
+    grid-template-rows: auto repeat(var(--rows),minmax(8vw,auto));
+    min-width: calc(var(--columns)*10vw + (var(--columns) - 1)*var(--gap) + 24px);
+  }
+  #tournament-screen .tournament-tree h3 { font-size: var(--readable-small); }
+  .tournament-side-portrait { width: 8vw; }
+  #tournament-screen .tournament-control-icon { font-size: var(--readable-title); padding: .2em .4em; }
+  .tournament-control-icon small { font-size: var(--readable-small); }
+  #online-screen .online-form, #online-screen input, #online-screen select { font-size: var(--readable-text); }
+  #tower .tower-summary { font-size: var(--readable-text); }
+  .game { width: min(94vw, calc((100dvh - 290px) * 16 / 9)); }
+  .arena-tools, .mini, .game-note, .game-note b, #escape-hint,
+  .round-clock strong, .fighter-label small { font-size: var(--readable-small); }
+  .fighter-label { font-size: var(--readable-text); }
+  .hud-portrait { width: 2.2em; height: 2.2em; }
+  .round-clock > b { font-size: clamp(38px,3vw,110px); }
+  .bar { height: clamp(22px,2.5vh,52px); }
+  .overlay p { font-size: var(--readable-text); }
+  .ctl { width: clamp(60px,4vw,150px); height: clamp(60px,4vw,150px); }
+  .ctl > span { font-size: var(--readable-title); }
+  .ctl > small, .ctl.defense small { font-size: clamp(10px,.75vw,28px); max-width: 100%; }
+  .game-note { flex-wrap: wrap; }
+  #view-controls .audio-toggle { font-size: var(--readable-small); }
+  #view-controls #audio-toggle { width: auto; min-width: 7em; }
+  #view-controls #fullscreen-toggle { font-size: var(--readable-title); }
+  #game .arena-tools { padding-right: 11em; }
+  #fullscreen-message { font-size: var(--readable-small); max-width: 70vw; }
+}

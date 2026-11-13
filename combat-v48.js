@@ -27,8 +27,8 @@ function posture(a,down){if(!a||a.stun>0||a.blockstun>0)return;if(a.attack>0){if
 function combatSheet(im){const cells=[];const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);const d=x.getImageData(0,0,c.width,c.height).data;for(let id=0;id<12;id++){const x0=Math.round((id%4)*c.width/4),x1=Math.round((id%4+1)*c.width/4),y0=Math.round(Math.floor(id/4)*c.height/3),y1=Math.round((Math.floor(id/4)+1)*c.height/3);let l=x1,r=x0,t=y1,b=y0;for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++)if(d[(py*c.width+px)*4+3]>32){l=Math.min(l,px);r=Math.max(r,px);t=Math.min(t,py);b=Math.max(b,py)}cells.push({x:l,y:t,w:r-l+1,h:b-t+1});}c.width=c.height=0;return cells;}
 let crouchCells,grabCells,lowPunchCells,lowKickCells;
 function drawCombatCell(im,cells,id,height){if(!cells)return;const a=cells[id],w=a.w/a.h*height;if(!drawMaskedLowPose(im,id))ctx.drawImage(im,a.x,a.y,a.w,a.h,-w/2,-height,w,height);}
-function comboLabel(seq){return seq.split('').map(c=>c==='P'?'J':c==='L'?'↓ + K':'K').join(' → ')}
-function combatInstructions(){return '<p class="combat-guide">↓: agacharse · 🛡 + ↓: defensa baja · Salto + patada: ataque alto · F o 🛡 + piña: agarrar / zafarse · J: piña · K: patada · ↓ + K: patada baja</p>';}
+function comboLabel(seq){return seq.split('').map(c=>c==='P'?'□':c==='L'?'↓ + △':'△').join(' → ')}
+function combatInstructions(){return '<p class="combat-guide">↓: agacharse · L1 + ↓: defensa baja · × + △: ataque alto · R1 o L1 + □: agarrar / zafarse · □: piña · △: patada · ○: especial · ×: salto · ↓ + △: patada baja</p>';}
 
 // Preserve repeated taps and the stance at the instant each button is released.
 const inputQueue=[];

@@ -270,6 +270,10 @@
           noise({ freq: 5100, gain: .035, dur: .025 });
           break;
         case 'confirm': notes([62, 69, 74], 'square', .065, .10); break;
+        case 'shot':
+          noise({freq:3100,end:500,type:'highpass',dur:.16,gain:.7,attack:.001});
+          tone({freq:125,end:40,dur:.14,gain:.35});
+          break;
         case 'punch':
           noise({ freq: 1000, end: 4300, q: .65, dur: .13, gain: .24, attack: .014 });
           tone({ freq: 180, end: 72, dur: .085, gain: .19 });

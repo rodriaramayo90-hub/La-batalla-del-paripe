@@ -8,7 +8,7 @@ const SPECIAL_ADVANTAGES=[
  {rawDamage:32,slow:120,speed:.6,label:'El caramelo ralentiza el movimiento durante 2 s.'},
  {rawDamage:32,slow:150,speed:.65,label:'El líquido ralentiza el movimiento durante 2,5 s.'},
  {rawDamage:36,guardStun:27,chip:.22,label:'La picada presiona la guardia y causa daño parcial al bloquear.'},
- {rawDamage:34,knockdown:48,label:'La escoba derriba y abre espacio para reposicionarte.'},
+ {rawDamage:34,knockdown:48,label:'El disparo derriba al rival si conecta.'},
  {rawDamage:38,label:'Remate de precisión: daño alto a distancia.'},
  {rawDamage:34,breakGuard:true,stun:84,label:'Los libros rompen la guardia.'},
  {rawDamage:30,slow:150,speed:.55,label:'La pintura ralentiza el movimiento durante 2,5 s.'},
