@@ -79,8 +79,8 @@ function deform(u,v,type,amplitude,side){
       break;
   }
   const footLock=1-ease((v-.90)/.085);
-  const faceLock=v<.19?1:1; // head's dimensions remain unchanged
-  return {x:side*dx*amplitude*footLock*faceLock,
+  // Whole head moves without scaling; feet stay anchored.
+  return {x:side*dx*amplitude*footLock,
           y:dy*amplitude*footLock};
 }
 function mapTriangle(g,img,s0,s1,s2,d0,d1,d2){
@@ -203,10 +203,13 @@ drawFighter=function(a,ghost=false){
   if(!active)return originalDrawFighter.call(this,a,ghost);
   // Visual-only: preserve the engine's invulnerability and recoil values.
   // Stop the flicker and rigid rocking only while rendering the new pose.
-  const inv=a.invuln,recoil=a.hitRecoil;
+  const inv=a.invuln,recoil=a.hitRecoil,legGone=a.legGone;
   a.invuln=0;a.hitRecoil=0;
+  // If T-Rex is hit while his thrown leg is still airborne, show the
+  // reaction instead of the leg-throw casting sprite.
+  a.legGone=false;
   try{return originalDrawFighter.call(this,a,ghost);}
-  finally{a.invuln=inv;a.hitRecoil=recoil;}
+  finally{a.invuln=inv;a.hitRecoil=recoil;a.legGone=legGone;}
 };
 function initPanel(){
   const toggle=document.getElementById('beta-v2-toggle');
