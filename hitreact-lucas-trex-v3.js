@@ -13,8 +13,8 @@ const atlas=new Map();
 const toggleState={active:true,ready:false,lastHit:'',lastTime:0,issue:''};
 const PHASES={
   high:['hurt','hurt','held','hurt','guard'],
-  mid:['forward','shield','shield','forward','guard'],
-  low:['low','low','lowRecover','shield','guard'],
+  mid:['forward','forward','low','shield','guard'],
+  low:['low','low','low','shield','guard'],
   heavy:['hurt','fall','fall','hurt','guard']
 };
 // Each item is a complete artist-authored sprite, not a warped copy of one pose.
