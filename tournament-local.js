@@ -92,6 +92,7 @@ function closeTournamentRoster() {
 }
 
 function leaveTournament() {
+  if (typeof hideTournamentCeremony === 'function') hideTournamentCeremony();
   TOURNAMENT.phase = '';
   TOURNAMENT.current = null;
   TOURNAMENT.loading = false;
