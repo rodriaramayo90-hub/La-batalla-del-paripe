@@ -1,6 +1,7 @@
 const TOURNAMENT = {
   rounds: [], current: null, champion: null, phase: '',
-  sides: new Map(), ready: new Set(), lineup: [], loading: false
+  sides: new Map(), ready: new Set(), lineup: [], loading: false,
+  lastStage: null
 };
 
 function buildTournament(entrants, random = Math.random) {
@@ -114,6 +115,7 @@ function startTournament() {
   TOURNAMENT.entrants = entrants;
   TOURNAMENT.rounds = buildTournament(entrants);
   TOURNAMENT.champion = null;
+  TOURNAMENT.lastStage = null;
   TOURNAMENT.bestOf = Number($('tournament-rounds').value);
   showTournamentBracket();
 }
@@ -294,6 +296,22 @@ function syncTournamentPads(pads) {
   renderTournamentSides();
 }
 
+// Cada enfrentamiento escoge un escenario al azar entre todos los disponibles,
+ // salvo el del enfrentamiento anterior. Los rounds del mismo enfrentamiento
+ // mantienen LOCAL.stage hasta que termine el mejor de 1, 3 o 5.
+function randomTournamentStage() {
+  const available = STAGES.map((_, index) => index)
+    .filter(index => index !== TOURNAMENT.lastStage);
+  if (!available.length) {
+    // Solo puede ocurrir con un único escenario disponible.
+    TOURNAMENT.lastStage = 0;
+    return 0;
+  }
+  const selected = available[Math.floor(Math.random() * available.length)];
+  TOURNAMENT.lastStage = selected;
+  return selected;
+}
+
 async function startTournamentFight() {
   if (TOURNAMENT.phase !== 'sides' || $('tournament-start').disabled) return;
   const token = battleToken;
@@ -316,7 +334,7 @@ async function startTournamentFight() {
       return id.startsWith('pad:') ? id : 'keyboard';
     });
     LOCAL.bestOf = TOURNAMENT.bestOf;
-    LOCAL.stage = (round + index) % STAGES.length;
+    LOCAL.stage = randomTournamentStage();
     LOCAL.wins = [0, 0];
     LOCAL.round = 1;
     LOCAL.active = true;
