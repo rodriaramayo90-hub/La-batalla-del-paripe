@@ -227,93 +227,6 @@
     c.restore();
   }
 
-  function drawApplaudingFighter(c, entrant, x, foot, size, dir, seconds, index) {
-    const id=entrant.fighter;
-    const [sheet,row]=actionMap[id];
-    const k=size/330;
-    const rhythm=seconds*10.5 + index*.63;
-    const contact=Math.pow(Math.max(0,Math.cos(rhythm)),2);
-    // Pose de guardia (brazos delante), en lugar de pose de victoria con puños arriba.
-    c.save();c.translate(x,foot + Math.sin(rhythm)*2);c.scale(dir,1);
-    SpriteAtlas.draw(c,actionAtlases[sheet],row,0,0,0,size);
-    c.restore();
-    c.save();
-    c.translate(x,foot+Math.sin(rhythm)*2);
-    c.scale(dir*k,k);
-    c.lineCap='round';c.lineJoin='round';
-    const sleeve=['#30313b','#2b9f9d','#d9a34c','#5278af','#78548f','#cc7190',
-      '#74737a','#bf9972','#527a88','#715490','#b07b92','#637f8a'][id]||'#656575';
-    const gap=7+24*(1-contact); // palma contra palma al cerrarse; separación al abrirse.
-    for(const side of [-1,1]){
-      const sx=side*53,sy=-215,ex=side*48,ey=-175;
-      const hx=side*gap,hy=-194;
-      // Volumen de brazo: manga, antebrazo, puño. No son líneas flotantes.
-      c.beginPath();c.moveTo(sx,sy);c.quadraticCurveTo(side*79,-193,ex,ey);
-      c.strokeStyle='#231a24';c.lineWidth=30;c.stroke();
-      c.strokeStyle=sleeve;c.lineWidth=23;c.stroke();
-      c.beginPath();c.moveTo(ex,ey);c.quadraticCurveTo(side*27,-174,hx,hy);
-      c.strokeStyle='#442b2c';c.lineWidth=21;c.stroke();
-      c.strokeStyle='#e3b390';c.lineWidth=15;c.stroke();
-      c.save();c.translate(hx,hy);c.rotate(side*.26);
-      // Palma con cuatro dedos cerrando sobre la palma contraria.
-      c.beginPath();c.ellipse(0,0,11,15,0,0,Math.PI*2);
-      c.fillStyle='#ebc09e';c.fill();c.strokeStyle='#694335';c.lineWidth=3;c.stroke();
-      c.strokeStyle='#a56d53';c.lineWidth=1.6;
-      for(let finger=-1;finger<=1;finger++){
-        c.beginPath();c.moveTo(-5+finger*4,-5);c.lineTo(-5+finger*4,5);c.stroke();
-      }
-      c.restore();
-    }
-    if(contact>.80){
-      c.strokeStyle='#fff0a1';c.lineWidth=3.5;
-      for(const angle of [-1.1,-.45,.45,1.1]){
-        const cx=Math.sin(angle)*26, cy=-194-Math.cos(angle)*29;
-        c.beginPath();c.moveTo(cx*.65,-194+(cy+194)*.55);c.lineTo(cx,cy);c.stroke();
-      }
-    }
-    c.restore();
-  }
-
-  
-
-  function trophy(c, x, y, scale, seconds) {
-    c.save();c.translate(x,y);c.rotate(Math.sin(seconds*2.5)*.06);c.scale(scale,scale);
-    c.shadowColor='#ffd95a';c.shadowBlur=15;
-    c.lineWidth=8;c.lineCap='round';c.strokeStyle='#df8c14';
-    c.beginPath();c.arc(-35,-53,26,Math.PI*.57,Math.PI*1.55);c.stroke();
-    c.beginPath();c.arc(35,-53,26,-Math.PI*.55,Math.PI*.43);c.stroke();
-    const gold=c.createLinearGradient(-38,-92,39,-22);
-    gold.addColorStop(0,'#a95706');gold.addColorStop(.27,'#ffe981');
-    gold.addColorStop(.7,'#ffc236');gold.addColorStop(1,'#ba6e0b');
-    c.beginPath();c.moveTo(-40,-89);c.lineTo(40,-89);
-    c.quadraticCurveTo(34,-26,6,-23);c.lineTo(-6,-23);c.quadraticCurveTo(-34,-26,-40,-89);c.closePath();
-    c.fillStyle=gold;c.fill();c.strokeStyle='#a96912';c.lineWidth=3;c.stroke();
-    round(c,-7,-26,14,24,2,'#e7a329');
-    round(c,-29,-5,58,13,4,'#f6be3c','#a86818',3);
-    c.shadowBlur=0;
-    c.fillStyle='#fff8cb';
-    c.beginPath();c.ellipse(-17,-64,6,18,-.25,0,Math.PI*2);c.fill();
-    c.restore();
-  }
-
-  function trophyGrip(c, x, y, fighter, seconds) {
-    // La copa termina en la mano elevada que ya forma parte del sprite de victoria.
-    // No se añade un tercer brazo ni la antigua polilínea roja.
-    c.save();
-    c.translate(x,y);
-    c.rotate(Math.sin(seconds*2.5)*.028);
-    c.lineWidth=3;c.strokeStyle='#513327';
-    c.fillStyle='#e7b995';
-    c.beginPath();c.ellipse(1,-3,13,11,-.17,0,Math.PI*2);c.fill();c.stroke();
-    c.strokeStyle='#ba8059';c.lineWidth=2.3;
-    for(let i=0;i<3;i++){
-      c.beginPath();c.moveTo(-6+i*5,-7);c.quadraticCurveTo(-8+i*5,-3,-5+i*5,3);c.stroke();
-    }
-    c.restore();
-  }
-
-  
-
   function nameplate(c, entrant, x, y, size) {
     const label='J'+entrant.number+' · '+fighters[entrant.fighter][0];
     c.save();let font=20;
@@ -364,8 +277,9 @@
       if(p.entry<=0)return;
       const bob=(seconds>1.4?Math.sin(seconds*12.8+p.index*.9)*3:0);
       const phase=[0,1,2,1][Math.floor(seconds*4+p.index)%4];
-      // Cuerpo completo en pose de guardia y manos que chocan en un bucle.
-      drawApplaudingFighter(c,p.entrant,p.x,p.foot+bob,p.size,p.side?-1:1,seconds,p.index);
+      // Fotograma de cuerpo entero generado para este luchador (sin manos pegadas).
+      const clapPhase=Math.floor(seconds*7.2+p.index*1.3)%4;
+      CeremonySpriteAtlas.draw(c,p.entrant.fighter,'clap',p.x,p.foot+bob,p.size,clapPhase,p.side?-1:1);
       nameplate(c,p.entrant,p.x,p.foot+30,p.size);
     });
   }
@@ -379,27 +293,16 @@
     const podiumY=top+(1-move)*260;
     podium(c,podiumY,scene.winner);
     if(move>.01){
-      const lift=ease((seconds-3.1)/1.3);
       const jump=seconds>4.8?Math.abs(Math.sin(seconds*3.7))*6:0;
       const foot=podiumY+8-jump;
-      const id=scene.winner.fighter;
-      const phase=[0,1,2,1][Math.floor(Math.max(0,seconds-2.25)*4)%4];
-      avatar(c,scene.winner,640,foot,292,phase,1);
-      // El trofeo sigue la mano levantada del sprite; NO se dibuja un brazo de unión.
-      const handX=640+([91,77,76,81,74,79,86,77,83,75,83,78][id]||79);
-      const handY=foot-227-lift*36 + Math.sin(seconds*3)*2;
-      trophy(c,handX+8,handY+5,.82,seconds);
-      trophyGrip(c,handX+7,handY+2,id,seconds);
+      // La copa y sus manos ya son parte del fotograma completo.
+      // Pose de espera -> elevación -> trofeo sostenido: ningún trazo artificial.
+      const age=seconds-2.05;
+      const phase=age<.85?0:(Math.floor((age-.85)*2.4)%3===2?2:1);
+      CeremonySpriteAtlas.draw(c,scene.winner.fighter,'winner',640,foot,292,phase,1);
     }
     confetti(c,seconds);
-    if(seconds>5.3){
-      c.save();c.globalAlpha=smooth((seconds-5.3)/.7);
-      text(c,'LOS PERDEDORES APLAUDEN AL CAMPEÓN',640,183,'900 23px system-ui,Arial','#ffe39a','#301038',5);
-      c.restore();
-    }
   }
-
-  
 
   function pollPad(scene) {
     if(typeof navigator.getGamepads!=='function')return;
@@ -422,6 +325,7 @@
     const root=setup();
     const entrants=state.entrants||state.rounds[0].flatMap(m=>m.players.filter(Boolean));
     const losers=entrants.filter(e=>e.number!==state.champion.number);
+    CeremonySpriteAtlas.prewarm(entrants,state.champion);
     const ctx=root.querySelector('canvas').getContext('2d');
     if(!ctx){showTournamentBracket();return;}
     // Desconectar el combate anterior, para no dibujar ni escuchar la pelea bajo la cinemática.
