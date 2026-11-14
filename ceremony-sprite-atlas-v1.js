@@ -114,8 +114,81 @@
     return canvas;
   }
 
+  // Bites y Maléfica conservan sus dibujos, rostros y ropa originales.
+  // Los fotogramas se hornean completos una sola vez; no se pegan
+  // manos o copas sobre los personajes durante la cinemática.
+  // Para aplaudir, se desplazan suavemente los píxeles de los propios
+  // antebrazos, sin cambiar la silueta de cabeza, tronco ni piernas.
+  function reshape(frame, region, transform) {
+    const c=frame.getContext('2d',{willReadFrequently:true});
+    const im=c.getImageData(0,0,W,H);
+    const original=new Uint8ClampedArray(im.data),target=im.data;
+    const x0=Math.max(0,Math.floor(region.x0)),x1=Math.min(W,Math.ceil(region.x1));
+    const y0=Math.max(0,Math.floor(region.y0)),y1=Math.min(H,Math.ceil(region.y1));
+    for(let y=y0;y<y1;y++){
+      for(let x=x0;x<x1;x++){
+        const [dx,dy]=transform(x,y);
+        if(Math.abs(dx)+Math.abs(dy)<.01)continue;
+        const sx=Math.max(0,Math.min(W-1,x-dx));
+        const sy=Math.max(0,Math.min(H-1,y-dy));
+        const ix=Math.floor(sx),iy=Math.floor(sy),fx=sx-ix,fy=sy-iy;
+        const ix2=Math.min(W-1,ix+1),iy2=Math.min(H-1,iy+1);
+        const a=(iy*W+ix)*4,b=(iy*W+ix2)*4;
+        const d=(iy2*W+ix)*4,e=(iy2*W+ix2)*4;
+        const out=(y*W+x)*4;
+        for(let k=0;k<4;k++){
+          target[out+k]=original[a+k]*(1-fx)*(1-fy)+original[b+k]*fx*(1-fy)
+                       +original[d+k]*(1-fx)*fy+original[e+k]*fx*fy;
+        }
+      }
+    }
+    c.putImageData(im,0,0);
+  }
+
+  function extraCeremonyFrame(id,kind,step) {
+    const frame=document.createElement('canvas');
+    frame.width=W;frame.height=H;
+    const c=frame.getContext('2d',{alpha:true,willReadFrequently:true});
+    if(kind==='clap') {
+      // Bites ya junta las manos en su pose de victoria. Maléfica
+      // parte de la guardia frontal: sus dos manos quedan delante.
+      if(id===8)victoryFrame(c,id,0);
+      else actionFrame(c,id,0);
+      // Abertura/cierre del aplauso dentro del sprite original, no
+      // superposición de brazos dibujados de forma independiente.
+      const displacement=id===8?[0,15,0,12][step]:[-14,0,-12,0][step];
+      if(displacement){
+        const middleY=id===8?FOOT-211:FOOT-215;
+        reshape(frame,{x0:CX-104,x1:CX+104,y0:middleY-75,y1:middleY+77},(x,y)=>{
+          const lateral=Math.abs(x-CX);
+          const radial=Math.exp(-Math.pow((lateral-33)/43,2));
+          const vertical=Math.pow(Math.max(0,Math.sin(Math.PI*(y-middleY+75)/152)),2);
+          return [displacement*Math.tanh((x-CX)/10)*radial*vertical,0];
+        });
+      }
+    } else if(step===0) {
+      victoryFrame(c,id,0);
+    } else {
+      // Empuñadura detrás de la mano REAL del fotograma: el propio
+      // dibujo del personaje ocluye el pie de la copa.
+      bakeCup(c,id,step===2?.07:-.025);
+      victoryFrame(c,id,WINNER_POSE[id]);
+      if(step===2){
+        const gripX=CX+GRIP[id][0]*BODY/330;
+        const gripY=FOOT+GRIP[id][1]*BODY/330;
+        reshape(frame,{x0:gripX-92,x1:gripX+92,y0:gripY-118,y1:gripY+94},(x,y)=>{
+          const distX=(x-gripX)/92,distY=(y-gripY)/118;
+          const weight=Math.exp(-1.9*(distX*distX+distY*distY));
+          return [2*weight,-5*weight];
+        });
+      }
+    }
+    return frame;
+  }
+
   function compose(id,kind,step) {
     if(id<8 && artworkReady)return genuineFrame(id,kind,step);
+    if(id===8 || id===9)return extraCeremonyFrame(id,kind,step);
     // Conserva el arte original para 8..11 en vez de sustituir
     // sus caras o cuerpos por otro personaje.
     const frame=document.createElement('canvas');
@@ -134,7 +207,7 @@
     return frame;
   }
 
-    function sprite(id,kind,step) {
+  function sprite(id,kind,step) {
     id=Number(id);
     if(!Number.isInteger(id)||id<0||id>=fighters.length) return null;
     const total=kind==='clap'?4:3;
@@ -175,5 +248,5 @@
       for(let frame=0;frame<frames;frame++)sprite(id,kind,frame);
     }
   }
-    window.CeremonySpriteAtlas={draw,prewarm,clear:()=>cache.clear(),get count(){return cache.size}};
+  window.CeremonySpriteAtlas={draw,prewarm,clear:()=>cache.clear(),get count(){return cache.size}};
 })();
