@@ -41,8 +41,8 @@ function tournamentPhase(phase, focus) {
   $(focus).focus();
 }
 
-function tournamentPortrait(fighter) {
-  return '<span class="tournament-portrait" aria-hidden="true">' + portraitMarkup(fighter) + '</span>';
+function tournamentPortrait(fighter, inSelector=false) {
+  return '<span class="tournament-portrait" aria-hidden="true">' + portraitMarkup(fighter,inSelector) + '</span>';
 }
 
 function tournamentSetupPlayers() {
@@ -76,7 +76,7 @@ function openTournamentRoster(index) {
     card.id = 'tournament-fighter-choice-' + id;
     card.className = 'tournament-fighter-choice';
     card.setAttribute('aria-pressed', String(id === selected));
-    card.innerHTML = tournamentPortrait(id) + '<strong>' + fighter[0] + '</strong>';
+    card.innerHTML = tournamentPortrait(id,true) + '<strong>' + fighter[0] + '</strong>';
     card.addEventListener('click', () => {
       setTournamentPlayer(player, index, id);
       sfx('select');
