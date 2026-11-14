@@ -62,14 +62,15 @@ function localSecondStep(dt){
 function drawSecondCharge(a){const h=[...SECOND.charges.values()].sort((a,b)=>b.frames-a.frames)[0];if(!h)return;const ratio=Math.min(1,h.frames/CHARGE_FRAMES);ctx.save();ctx.fillStyle='#190925';ctx.fillRect(a.x-43,100-a.y,86,7);ctx.fillStyle=ratio>=1?'#ffe43a':'#dc7cff';ctx.fillRect(a.x-43,100-a.y,86*ratio,7);ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.strokeStyle='#21072c';ctx.lineWidth=4;const label=ratio>=1?'¡SOLTÁ!':'CARGANDO';ctx.strokeText(label,a.x,92-a.y);ctx.fillText(label,a.x,92-a.y);ctx.restore();}
 function localCharacter(slot,id){LOCAL.selected[slot]=id;renderLocalCard(slot);sfx('select');}
 function localControl(slot,value){LOCAL.controlsManual=true;LOCAL.controls[slot]=value;renderLocalCard(slot);$('local-status').textContent='';}
-function renderLocalCard(slot){const id=LOCAL.selected[slot],f=fighters[id];$('local-portrait-'+slot).innerHTML=portraitMarkup(id,true);$('local-style-'+slot).textContent=f[1];const pad=LOCAL.controls[slot].startsWith('pad:');$('local-help-'+slot).textContent=pad?'Cruceta / stick · □ piña · △ patada · ○ especial · L1 defensa':slot===0?'← → mover · ↑ saltar · ↓ agacharse · J piña · K patada · ESPACIO especial · MAYÚS defensa · F agarre':'A / D mover · W saltar · S agacharse · Z piña · X patada · C especial · V defensa · B agarre';
- const label=comboLabel;
+function renderLocalCard(slot){const id=LOCAL.selected[slot],f=fighters[id];$('local-portrait-'+slot).innerHTML=portraitMarkup(id,true);$('local-style-'+slot).textContent=f[1];const pad=LOCAL.controls[slot].startsWith('pad:'),controller=pad?availablePads().find(p=>'pad:'+p.index===LOCAL.controls[slot]):null,joy=controller&&joyConSide(controller);
+ $('local-help-'+slot).textContent=joy?'Joy-Con '+(joy==='L'?'izquierdo':'derecho')+' horizontal · stick mover/saltar · botón izquierdo piña · superior patada · derecho especial · inferior salto · SL defensa · SR agarre · +/− pausa':pad?'Cruceta / stick · □ piña · △ patada · ○ especial · L1 defensa':slot===0?'← → mover · ↑ saltar · ↓ agacharse · J piña · K patada · ESPACIO especial · MAYÚS defensa · F agarre':'A / D mover · W saltar · S agacharse · Z piña · X patada · C especial · V defensa · B agarre';
+ const label=joy?(seq=>seq.split('').map(key=>key==='P'?'botón izquierdo':key==='L'?'↓ + botón superior':'botón superior').join(' → ')):comboLabel;
  $('local-combos-'+slot).innerHTML=COMBO_ROUTES[id].map(r=>`<p><b>${r[0]}</b><span>${label(r[1])}</span></p>`).join('');}
 function refreshLocalControls(pads,initial=false){
  if(initial){LOCAL.controls=pads.length>=2?['pad:'+pads[0].index,'pad:'+pads[1].index]:pads.length?['keyboard','pad:'+pads[0].index]:['keyboard','keyboard'];}
  for(let slot=0;slot<2;slot++){
   const select=$('local-control-'+slot),value=LOCAL.controls[slot];select.replaceChildren(new Option(slot===0?'Teclado 1 / táctil':'Teclado 2','keyboard'));
-  for(const pad of pads)select.add(new Option('Mando '+(pad.index+1)+(isPS4(pad)?' · PS4':''),'pad:'+pad.index));
+  for(const pad of pads)select.add(new Option('Mando '+(pad.index+1)+' · '+padName(pad),'pad:'+pad.index));
   if(value!=='keyboard'&&!pads.some(p=>'pad:'+p.index===value))select.add(new Option('Mando desconectado',value));select.value=value;renderLocalCard(slot);
  }
 }
