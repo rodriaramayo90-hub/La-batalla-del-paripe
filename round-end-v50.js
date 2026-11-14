@@ -74,7 +74,8 @@ function fallCell(id,phase,masked=false){if(id===1&&masked)return[maskStages,0,3
 function prepareFallBounds(){
  const c=document.createElement('canvas');c.width=c.height=700;const x=c.getContext('2d',{willReadFrequently:true});
  const measure=(id,phase,masked=false)=>{x.clearRect(0,0,700,700);SpriteAtlas.draw(x,...fallCell(id,phase,masked),350,600,330);const d=x.getImageData(0,0,700,700).data;let l=700,r=0,t=700,b=0;for(let y=0;y<700;y++)for(let px=0;px<700;px++)if(d[(y*700+px)*4+3]>32){l=Math.min(l,px);r=Math.max(r,px);t=Math.min(t,y);b=Math.max(b,y);}return{left:l-350,right:r-350,top:t-600,bottom:b-600};};
- for(let id=0;id<12;id++){const rest=measure(id,2),factor=CHARACTER_HEIGHTS[id]/(rest.right-rest.left),im=fallArt[Math.floor(id/4)],base=Math.floor(id%4/2)*6+id%2*3,scales=POSE_SCALES[im.src.split('/').pop()];for(let p=0;p<3;p++)scales[base+p]*=factor;FALL_BOUNDS[id]=[0,1,2].map(p=>measure(id,p));}for(let p=0;p<3;p++)MASK_FALL_BOUNDS[p]=measure(1,p,true);c.width=c.height=0;
+ for(let id=0;id<12;id++)FALL_BOUNDS[id]=[0,1,2].map(p=>measure(id,p));
+ for(let p=0;p<3;p++)MASK_FALL_BOUNDS[p]=measure(1,p,true);c.width=c.height=0;
 }
 function drawKoDefeat(a,size){
  const t=clamp(a.koFall,0,1),phase=t<.32?0:t<.72?1:2,masked=a.id===1&&a.diveMask>0,b=masked?MASK_FALL_BOUNDS[phase]:FALL_BOUNDS[a.id]?.[phase];if(!b)return;

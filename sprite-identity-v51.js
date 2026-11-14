@@ -38,12 +38,11 @@ function drawLucasLowPose(im,id){
  SpriteAtlas.draw(ctx,lucasArt[1],0,col,0,0,330);return true;
 }
 
-// Bent torsos and foreshortened shoulders cannot determine a fighter's scale.
-// Match the original head's anatomical unit for stance/action families, with
-// one shared factor throughout the three punch phases. All scaling is uniform.
+// Use anatomical calibration instead of fitting each silhouette to a box.
+// Each special and finisher uses a shared scale across its animation phases.
 function poseScale(im,row,col){
- const name=im.src.split('/').pop(),stance=name.startsWith('actions-')||name==='lucas-actions-v45.webp';
- return (stance||name.startsWith('fall-')||name==='phone-v48.webp')?(POSE_SCALES[name]?.[row*6+col]||1):(BODY_FACTORS[name]?.[row*6+col]||1);
+ const name=im.src.split('/').pop();
+ return POSE_SCALES[name]?.[row*6+col]??1;
 }
 const LOW_TEXTURES=new WeakMap();
 function lowPoseTexture(im,cell,id,unit){
@@ -70,6 +69,15 @@ function configureLucasLowRenderer(){
 
 function normalizePhonePoses(){
  const c=document.createElement('canvas');c.width=c.height=700;const x=c.getContext('2d',{willReadFrequently:true}),scales=POSE_SCALES[phoneArt.src.split('/').pop()];
- for(let row=0;row<2;row++)for(let col=0;col<6;col++){x.clearRect(0,0,700,700);SpriteAtlas.draw(x,phoneArt,row,col,350,600,330);const d=x.getImageData(0,0,700,700).data;let top=700,bottom=0;for(let y=0;y<700;y++)for(let px=0;px<700;px++)if(d[(y*700+px)*4+3]>32){top=Math.min(top,y);bottom=Math.max(bottom,y);}scales[row*6+col]*=(CHARACTER_HEIGHTS[1]+(row?15:0))/(bottom-top);}
+ for(let row=0;row<2;row++){
+  x.clearRect(0,0,700,700);
+  SpriteAtlas.draw(x,phoneArt,row,0,350,600,330);
+  const pixels=x.getImageData(0,0,700,700).data;
+  let top=700,bottom=-1;
+  for(let y=0;y<700;y++)for(let px=0;px<700;px++)if(pixels[(y*700+px)*4+3]>32){top=Math.min(top,y);bottom=Math.max(bottom,y);}
+  if(bottom<top)continue;
+  const scale=scales[row*6]*(CHARACTER_HEIGHTS[1]+(row?15:0))/(bottom-top+1);
+  scales.fill(scale,row*6,row*6+6);
+ }
  c.width=c.height=0;
 }

@@ -191,7 +191,6 @@ if(a.hitRecoil>0&&!a.attack&&!a.blocking&&!a.knockdown&&!a.roundLoser&&!a.victor
  // Pivot near the hips to keep the shift at the feet small.
  ctx.translate(away*10*rebound*motion,Math.max(0,1-height)*5*recoil*motion-115);
  ctx.rotate(away*bend*rebound*motion);
- ctx.scale(1+.035*recoil*motion,1-(height===-1?.085:.035)*recoil*motion);
  ctx.translate(0,115);
 }
 if(a.guardMix>.02){
