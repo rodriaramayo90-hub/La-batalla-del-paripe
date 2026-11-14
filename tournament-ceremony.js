@@ -80,6 +80,31 @@
     c.fillText(value, x, y);
   }
 
+  function streetSign(c) {
+    // Cartel vial con poste: está físicamente en la acera derecha.
+    // Su base toca el pavimento en (1046, 507), detrás de los espectadores.
+    c.save();
+    const px=1046, ground=506;
+    c.fillStyle='#130b25a0';c.beginPath();c.ellipse(px+18,ground+5,56,10,-.22,0,Math.PI*2);c.fill();
+    const metal=c.createLinearGradient(px-7,0,px+8,0);
+    metal.addColorStop(0,'#5d6476');metal.addColorStop(.45,'#e1e3ec');metal.addColorStop(1,'#536278');
+    round(c,px-7,284,14,224,4,metal,'#344254',2);
+    round(c,px-13,499,28,10,3,'#485161','#25283a',2);
+    c.translate(px,280);
+    c.rotate(-.045);
+    c.shadowColor='#18102099';c.shadowBlur=12;c.shadowOffsetY=6;
+    const plaque=c.createLinearGradient(-178,-44,111,20);
+    plaque.addColorStop(0,'#17675f');plaque.addColorStop(.6,'#217f74');plaque.addColorStop(1,'#12504d');
+    round(c,-183,-43,292,83,9,plaque,'#f4f3e6',6);
+    c.shadowBlur=0;c.shadowOffsetY=0;
+    round(c,-174,-34,274,65,4,'#206d66','#7fb5a7',1.5);
+    for(const x of [-162,88]){
+      c.fillStyle='#d5ddd6';c.beginPath();c.arc(x,-1,3.5,0,Math.PI*2);c.fill();
+    }
+    text(c,'CALLE DERROTA',-39,10,'900 28px system-ui,Arial','#fffdf1','#134941',2);
+    c.restore();
+  }
+
   function background(c, seconds) {
     const sky = c.createLinearGradient(0, 0, 0, 570);
     sky.addColorStop(0, '#170a35');
@@ -135,34 +160,61 @@
       c.save();c.shadowColor='#ffd69c';c.shadowBlur=25;
       round(c,x-22,288,44,32,7,'#ffe0a1','#3b2438',5);c.restore();
     }
-    // Placa de calle anclada en el fondo de la ciudad.
-    c.save();
-    c.translate(640,63);c.rotate(-.014);
-    c.shadowColor='#11091d';c.shadowBlur=18;c.shadowOffsetY=9;
-    round(c,-290,-52,580,102,17,'#17685f','#f9fcf1',9);
-    c.shadowBlur=0;c.shadowOffsetY=0;
-    round(c,-279,-42,558,82,10,'#17685f','#276259',3);
-    text(c,'CALLE DERROTA',0,18,'900 58px system-ui, Arial','#fffced','#123b38',2);
-    c.restore();
-    if(seconds>4.4){
-      c.save();c.globalAlpha=smooth((seconds-4.4)/1);
-      text(c,'¡CAMPEÓN DEL PARIPÉ!',640,164,'1000 46px system-ui, Arial','#fff5b0','#351541',8);
+    streetSign(c);
+    // La cabecera es información de campeonato, no el nombre de la calle.
+    if(seconds>4.2){
+      c.save();c.globalAlpha=smooth((seconds-4.2)/.9);
+      text(c,'¡CAMPEÓN DEL PARIPÉ!',640,103,'1000 52px system-ui,Arial','#fff0a8','#351541',8);
       c.restore();
     }
   }
 
-  function podium(c, y) {
+  function podium(c, y, entrant) {
+    // Madera maciza con superficie en perspectiva, tablones, vetas y herrajes.
+    const left=510,w=260,h=127;
     c.save();
-    c.shadowColor='#140723aa';c.shadowBlur=24;c.shadowOffsetY=9;
-    const gold=c.createLinearGradient(500,y,762,y+110);
-    gold.addColorStop(0,'#aa661b');gold.addColorStop(.22,'#ffe67d');
-    gold.addColorStop(.56,'#ffd14e');gold.addColorStop(1,'#a86015');
-    round(c,520,y,240,142,13,gold,'#fff1a7',8);
+    c.shadowColor='#110c1bb0';c.shadowBlur=24;c.shadowOffsetY=11;
+    c.beginPath();c.moveTo(left-16,y+5);c.lineTo(left+13,y-15);
+    c.lineTo(left+w-13,y-15);c.lineTo(left+w+16,y+5);
+    c.closePath();c.fillStyle='#b87a46';c.fill();c.strokeStyle='#efc38a';c.lineWidth=4;c.stroke();
+    const wood=c.createLinearGradient(left,y,left+w,y+h);
+    wood.addColorStop(0,'#784321');wood.addColorStop(.24,'#bf8145');
+    wood.addColorStop(.62,'#98602f');wood.addColorStop(1,'#5f331b');
+    round(c,left,y+3,w,h,8,wood,'#4b291c',6);
     c.shadowBlur=0;c.shadowOffsetY=0;
-    rect(c,535,y+13,210,8,'#ffefb7aa');
-    text(c,'1',640,y+89,'1000 92px system-ui, Arial','#723e0c','#ffeed0',2);
+    // Planchas horizontales y juntas con profundidad.
+    for(let row=0;row<4;row++){
+      const yy=y+8+row*29;
+      rect(c,left+8,yy,w-16,2,'#4e2a1ca8');
+      rect(c,left+9,yy+4,w-18,1,'#e9b77388');
+    }
+    // Vetas orgánicas, sin una textura de franjas uniformes.
+    for(let j=0;j<20;j++){
+      const yy=y+12+j*5.8, x=left+13+(j*71)%43;
+      c.beginPath();c.moveTo(x,yy);
+      c.bezierCurveTo(x+35,yy-7,x+95,yy+7,x+190+(j%3)*7,yy-1);
+      c.strokeStyle=j%3===0?'#e6b27444':'#42200f55';
+      c.lineWidth=j%4===0?2.1:1.1;c.stroke();
+    }
+    for(const xx of [left+12,left+w-12]){
+      for(const yy of [y+17,y+43,y+75,y+108]){
+        c.beginPath();c.arc(xx,yy,2.4,0,Math.PI*2);
+        c.fillStyle='#e5ba76';c.fill();c.strokeStyle='#573c26';c.lineWidth=1;c.stroke();
+      }
+    }
+    // Número tallado y plaquita del campeón.
+    text(c,'1',640,y+85,'1000 82px Georgia,serif','#ffe1a0','#3b1b0a',6);
+    const label='J'+entrant.number+' · '+fighters[entrant.fighter][0];
+    c.save();
+    let fontsize=22;
+    do{c.font='900 '+fontsize+'px system-ui,Arial';if(c.measureText(label).width<220)break;fontsize--;}while(fontsize>13);
+    round(c,530,y+95,220,29,5,'#3e271b','#d8a468',2);
+    text(c,label,640,y+116,'900 '+fontsize+'px system-ui,Arial','#fff1ca','#2b1309',2);
+    c.restore();
     c.restore();
   }
+
+  
 
   function avatar(c, entrant, x, footY, size, phase, direction) {
     const id = entrant.fighter;
@@ -175,31 +227,54 @@
     c.restore();
   }
 
-  function clap(c, x, footY, size, direction, seconds, id, index) {
-    // Brazos y palmas coordinados con las poses de cuerpo completo.
-    const beat = Math.sin(seconds*12.8 + index*.9);
-    const spread = 14 * Math.abs(beat);
-    const scale=size/330;
-    c.save();c.translate(x,footY);c.scale(direction*scale,scale);
+  function drawApplaudingFighter(c, entrant, x, foot, size, dir, seconds, index) {
+    const id=entrant.fighter;
+    const [sheet,row]=actionMap[id];
+    const k=size/330;
+    const rhythm=seconds*10.5 + index*.63;
+    const contact=Math.pow(Math.max(0,Math.cos(rhythm)),2);
+    // Pose de guardia (brazos delante), en lugar de pose de victoria con puños arriba.
+    c.save();c.translate(x,foot + Math.sin(rhythm)*2);c.scale(dir,1);
+    SpriteAtlas.draw(c,actionAtlases[sheet],row,0,0,0,size);
+    c.restore();
+    c.save();
+    c.translate(x,foot+Math.sin(rhythm)*2);
+    c.scale(dir*k,k);
     c.lineCap='round';c.lineJoin='round';
-    const color=fighters[id][7] || '#b05a87';
-    const positions=[-1,1];
-    for(const side of positions){
-      const handX=side*(12+spread), handY=-193+Math.sin(seconds*12.8+index*.9)*2;
-      c.strokeStyle='#23122c';c.lineWidth=25;
-      c.beginPath();c.moveTo(side*51,-203);c.quadraticCurveTo(side*46,-172,handX,handY);c.stroke();
-      c.strokeStyle=color;c.lineWidth=18;c.stroke();
-      c.save();c.translate(handX,handY);c.rotate(side*.18);
-      c.fillStyle='#f1c59e';c.strokeStyle='#4b2d40';c.lineWidth=3;
-      c.beginPath();c.ellipse(0,0,11,15,0,0,Math.PI*2);c.fill();c.stroke();
+    const sleeve=['#30313b','#2b9f9d','#d9a34c','#5278af','#78548f','#cc7190',
+      '#74737a','#bf9972','#527a88','#715490','#b07b92','#637f8a'][id]||'#656575';
+    const gap=7+24*(1-contact); // palma contra palma al cerrarse; separación al abrirse.
+    for(const side of [-1,1]){
+      const sx=side*53,sy=-215,ex=side*48,ey=-175;
+      const hx=side*gap,hy=-194;
+      // Volumen de brazo: manga, antebrazo, puño. No son líneas flotantes.
+      c.beginPath();c.moveTo(sx,sy);c.quadraticCurveTo(side*79,-193,ex,ey);
+      c.strokeStyle='#231a24';c.lineWidth=30;c.stroke();
+      c.strokeStyle=sleeve;c.lineWidth=23;c.stroke();
+      c.beginPath();c.moveTo(ex,ey);c.quadraticCurveTo(side*27,-174,hx,hy);
+      c.strokeStyle='#442b2c';c.lineWidth=21;c.stroke();
+      c.strokeStyle='#e3b390';c.lineWidth=15;c.stroke();
+      c.save();c.translate(hx,hy);c.rotate(side*.26);
+      // Palma con cuatro dedos cerrando sobre la palma contraria.
+      c.beginPath();c.ellipse(0,0,11,15,0,0,Math.PI*2);
+      c.fillStyle='#ebc09e';c.fill();c.strokeStyle='#694335';c.lineWidth=3;c.stroke();
+      c.strokeStyle='#a56d53';c.lineWidth=1.6;
+      for(let finger=-1;finger<=1;finger++){
+        c.beginPath();c.moveTo(-5+finger*4,-5);c.lineTo(-5+finger*4,5);c.stroke();
+      }
       c.restore();
     }
-    if(spread<3.8){
-      c.strokeStyle='#fff8a3';c.lineWidth=4;
-      for(const a of [-1,0,1]){c.beginPath();c.moveTo(a*12,-230);c.lineTo(a*18,-243);c.stroke();}
+    if(contact>.80){
+      c.strokeStyle='#fff0a1';c.lineWidth=3.5;
+      for(const angle of [-1.1,-.45,.45,1.1]){
+        const cx=Math.sin(angle)*26, cy=-194-Math.cos(angle)*29;
+        c.beginPath();c.moveTo(cx*.65,-194+(cy+194)*.55);c.lineTo(cx,cy);c.stroke();
+      }
     }
     c.restore();
   }
+
+  
 
   function trophy(c, x, y, scale, seconds) {
     c.save();c.translate(x,y);c.rotate(Math.sin(seconds*2.5)*.06);c.scale(scale,scale);
@@ -221,18 +296,23 @@
     c.restore();
   }
 
-  function armHoldingTrophy(c, x, foot, cupX, cupBase, size, fighter) {
-    const scale=size/330;
-    const shoulderX=x+45*scale, shoulderY=foot-195*scale;
-    const elbowX=x+82*scale, elbowY=foot-155*scale;
-    c.save();c.lineCap='round';c.lineJoin='round';
-    c.strokeStyle='#331e35';c.lineWidth=25*scale;
-    c.beginPath();c.moveTo(shoulderX,shoulderY);c.lineTo(elbowX,elbowY);c.lineTo(cupX-5,cupBase+5);c.stroke();
-    c.strokeStyle=fighters[fighter][7]||'#bc6388';c.lineWidth=19*scale;c.stroke();
-    c.beginPath();c.arc(cupX-4,cupBase+4,11*scale,0,Math.PI*2);
-    c.fillStyle='#f1c19b';c.fill();c.strokeStyle='#533345';c.lineWidth=3;c.stroke();
+  function trophyGrip(c, x, y, fighter, seconds) {
+    // La copa termina en la mano elevada que ya forma parte del sprite de victoria.
+    // No se añade un tercer brazo ni la antigua polilínea roja.
+    c.save();
+    c.translate(x,y);
+    c.rotate(Math.sin(seconds*2.5)*.028);
+    c.lineWidth=3;c.strokeStyle='#513327';
+    c.fillStyle='#e7b995';
+    c.beginPath();c.ellipse(1,-3,13,11,-.17,0,Math.PI*2);c.fill();c.stroke();
+    c.strokeStyle='#ba8059';c.lineWidth=2.3;
+    for(let i=0;i<3;i++){
+      c.beginPath();c.moveTo(-6+i*5,-7);c.quadraticCurveTo(-8+i*5,-3,-5+i*5,3);c.stroke();
+    }
     c.restore();
   }
+
+  
 
   function nameplate(c, entrant, x, y, size) {
     const label='J'+entrant.number+' · '+fighters[entrant.fighter][0];
@@ -284,8 +364,8 @@
       if(p.entry<=0)return;
       const bob=(seconds>1.4?Math.sin(seconds*12.8+p.index*.9)*3:0);
       const phase=[0,1,2,1][Math.floor(seconds*4+p.index)%4];
-      avatar(c,p.entrant,p.x,p.foot+bob,p.size,phase,p.side?-1:1);
-      if(seconds>1.25){clap(c,p.x,p.foot+bob,p.size,p.side?-1:1,seconds,p.entrant.fighter,p.index);}
+      // Cuerpo completo en pose de guardia y manos que chocan en un bucle.
+      drawApplaudingFighter(c,p.entrant,p.x,p.foot+bob,p.size,p.side?-1:1,seconds,p.index);
       nameplate(c,p.entrant,p.x,p.foot+30,p.size);
     });
   }
@@ -297,31 +377,29 @@
     const top=529;
     const move=ease((seconds-1.9)/1.1);
     const podiumY=top+(1-move)*260;
-    podium(c,podiumY);
+    podium(c,podiumY,scene.winner);
     if(move>.01){
-      const lift=ease((seconds-3.35)/1.45);
-      const jump=seconds>4.8?Math.abs(Math.sin(seconds*3.7))*8:0;
+      const lift=ease((seconds-3.1)/1.3);
+      const jump=seconds>4.8?Math.abs(Math.sin(seconds*3.7))*6:0;
       const foot=podiumY+8-jump;
       const id=scene.winner.fighter;
       const phase=[0,1,2,1][Math.floor(Math.max(0,seconds-2.25)*4)%4];
       avatar(c,scene.winner,640,foot,292,phase,1);
-      const cupX=748,cupBase=foot-115-lift*118;
-      armHoldingTrophy(c,640,foot,cupX,cupBase,292,id);
-      trophy(c,cupX,cupBase,1.0,seconds);
-      if(seconds>3.5){
-        const alpha=smooth((seconds-3.5)/1.2);
-        c.save();c.globalAlpha=alpha;
-        text(c,'J'+scene.winner.number+' · '+fighters[id][0],640,podiumY+125,'900 29px system-ui,Arial','#fff9dc','#7e440f',5);
-        c.restore();
-      }
+      // El trofeo sigue la mano levantada del sprite; NO se dibuja un brazo de unión.
+      const handX=640+([91,77,76,81,74,79,86,77,83,75,83,78][id]||79);
+      const handY=foot-227-lift*36 + Math.sin(seconds*3)*2;
+      trophy(c,handX+8,handY+5,.82,seconds);
+      trophyGrip(c,handX+7,handY+2,id,seconds);
     }
     confetti(c,seconds);
     if(seconds>5.3){
       c.save();c.globalAlpha=smooth((seconds-5.3)/.7);
-      text(c,'LOS PERDEDORES APLAUDEN AL CAMPEÓN',640,213,'900 23px system-ui,Arial','#ffe39a','#301038',5);
+      text(c,'LOS PERDEDORES APLAUDEN AL CAMPEÓN',640,183,'900 23px system-ui,Arial','#ffe39a','#301038',5);
       c.restore();
     }
   }
+
+  
 
   function pollPad(scene) {
     if(typeof navigator.getGamepads!=='function')return;
