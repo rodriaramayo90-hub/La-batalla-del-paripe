@@ -1,12 +1,44 @@
-/* Standard Gamepad mapping, including DualShock 4 over USB or Bluetooth. */
+/* Standard Gamepad mapping (PS4, paired Joy-Cons, Switch Pro) and individual Joy-Cons. */
 const PAD={seen:new Set(),previous:new Map(),menuRepeat:new Map(),signature:'',soloPause:false,lastMode:'',lastEnding:false,menuLock:0,raf:0};
 function isPS4(p){return /054c|dualshock|wireless controller|playstation|sony/i.test(p.id||'');}
-function availablePads(){try{return Array.from(navigator.getGamepads?.()||[]).filter(p=>p&&p.connected!==false&&(p.mapping==='standard'||isPS4(p)&&p.buttons.length>=16));}catch(_){return [];}}
+// USB IDs 057e:2006 (L) and 057e:2007 (R), plus the names exposed by OS drivers.
+function joyConSide(p){
+ const id=(p.id||'').toLowerCase();
+ if(/joy[ -]?con[^a-z0-9]*(?:\(l\)|left|l\b)/i.test(id)||(/057e/.test(id)&&/\b2006\b/.test(id)))return 'L';
+ if(/joy[ -]?con[^a-z0-9]*(?:\(r\)|right|r\b)/i.test(id)||(/057e/.test(id)&&/\b2007\b/.test(id)))return 'R';
+ return '';
+}
+function isSwitchPad(p){return /switch pro|nintendo.*(?:pro controller|charging grip)|057e.*(?:2009|200e)/i.test(p.id||'');}
+function padName(p){const side=joyConSide(p);return side?'Joy-Con '+(side==='L'?'izquierdo':'derecho'):isPS4(p)?'PS4':isSwitchPad(p)?'Switch Pro':'mando';}
+function availablePads(){try{return Array.from(navigator.getGamepads?.()||[]).filter(p=>p&&p.connected!==false&&(p.mapping==='standard'||isPS4(p)&&p.buttons.length>=16||joyConSide(p)&&p.buttons.length>=6||isSwitchPad(p)&&p.buttons.length>=12));}catch(_){return [];}}
 function padButton(p,n){const b=p.buttons[n];return !!(b&&(b.pressed||b.value>.5));}
-function padState(p){const x=Number(p.axes[0]||0),y=Number(p.axes[1]||0);return{left:padButton(p,14)||x<-.35,right:padButton(p,15)||x>.35,down:padButton(p,13)||y>.45,up:padButton(p,12)||y<-.55,jump:padButton(p,0)||padButton(p,12)||y<-.55,punch:padButton(p,2),kick:padButton(p,3),special:padButton(p,1),defend:padButton(p,4)||padButton(p,6),grab:padButton(p,5),confirm:padButton(p,0),back:padButton(p,1),options:padButton(p,9)};}
+function padState(p){
+ const side=joyConSide(p);
+ if(side){
+  // A Joy-Con held horizontally is a complete mini-controller.
+  // Chromium's "standard" mapping already orients its stick and face buttons.
+  // Older browsers can expose raw vertical axes/buttons instead.
+  const standard=p.mapping==='standard',ax=Number(p.axes[0]||0),ay=Number(p.axes[1]||0);
+  const x=standard?ax:side==='L'?ay:-ay;
+  const y=standard?ay:side==='L'?-ax:ax;
+  // Physical layout after rotating the controller: left=punch, top=kick,
+  // right=special, bottom=jump. Joy-Con L has arrows instead of ABXY.
+  const face=standard||side==='R'?{jump:0,punch:2,kick:3,special:1}:{jump:3,punch:1,kick:0,special:2};
+  const jump=padButton(p,face.jump);
+  return {left:x<-.35,right:x>.35,down:y>.45,up:y<-.55,
+   jump:jump||y<-.55,punch:padButton(p,face.punch),kick:padButton(p,face.kick),
+   special:padButton(p,face.special),
+   defend:padButton(p,4)||(!standard&&padButton(p,14)),
+   grab:padButton(p,5)||(!standard&&padButton(p,15)),
+   confirm:jump,back:padButton(p,side==='L'?10:11),
+   options:padButton(p,side==='L'?8:9)};
+ }
+ const x=Number(p.axes[0]||0),y=Number(p.axes[1]||0);
+ return{left:padButton(p,14)||x<-.35,right:padButton(p,15)||x>.35,down:padButton(p,13)||y>.45,up:padButton(p,12)||y<-.55,jump:padButton(p,0)||padButton(p,12)||y<-.55,punch:padButton(p,2),kick:padButton(p,3),special:padButton(p,1),defend:padButton(p,4)||padButton(p,6),grab:padButton(p,5),confirm:padButton(p,0),back:padButton(p,1),options:padButton(p,9)};
+}
 function padSlot(p,pads){if(LOCAL.active||mode==='local-screen')return LOCAL.controls.findIndex(value=>value==='pad:'+p.index);return pads[0]?.index===p.index?0:-1;}
-function refreshPadStatus(){const pads=availablePads(),text=!navigator.getGamepads?'Este navegador no admite mandos. Probá con Chrome actualizado.':pads.length?'🎮 '+pads.length+' mando'+(pads.length>1?'s':'')+' conectado'+(pads.length>1?'s':'')+' · □ piña · △ patada · ○ especial':'🎮 Mando PS4: conectalo por USB o Bluetooth y pulsá un botón.';for(const id of['menu-pad-status','local-pad-status'])$(id).textContent=text;}
-function releasePad(index){const source='pad-'+index;for(let slot=0;slot<2;slot++)for(const key of['left','right','down','jump','defend','punch','kick']){
+function refreshPadStatus(){const pads=availablePads(),names=pads.map(padName).join(' + '),text=!navigator.getGamepads?'Este navegador no admite mandos. Probá con Chrome actualizado.':pads.length?'🎮 '+pads.length+' mando'+(pads.length>1?'s':'')+' conectado'+(pads.length>1?'s':'')+' · '+names+(pads.some(p=>joyConSide(p))?' · Joy-Con en horizontal: stick para mover, botones para atacar':' · □ piña · △ patada · ○ especial'):'🎮 Compatible con PS4 y Joy-Con de Switch (Bluetooth). Pulsá un botón para conectar.';for(const id of['menu-pad-status','local-pad-status'])$(id).textContent=text;}
+function releasePad(index){const source='pad-'+index;for(let slot=0;slot<2;slot++)for(const key of['left','right','down','jump','defend','punch','kick','special','grab']){
  const map=HUMAN_SOURCES[slot],sources=map.get(key);if(sources){sources.delete(source);sources.delete(source+'-'+key);const state=slot===0?keys:SECOND.keys;state[key]=sources.size>0;}
  if(slot===0){chargeInputs.delete(source+'-'+key);}else SECOND.charges.delete(source+'-'+key);
  }syncChargeButtons();}
