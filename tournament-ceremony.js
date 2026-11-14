@@ -118,8 +118,8 @@
       c.save();
       if (side) { c.translate(WIDTH, 0); c.scale(-1, 1); }
       const buildings = [
-        {x:-35,y:153,w:168,h:330,color:'#3b2454'},
-        {x:129,y:207,w:144,h:276,color:'#503054'},
+        {x:-35,y:153,w:168,h:312,color:'#3b2454'},
+        {x:129,y:207,w:144,h:258,color:'#503054'},
         {x:265,y:260,w:137,h:205,color:'#693c59'},
         {x:378,y:310,w:98,h:155,color:'#92526a'}
       ];
@@ -135,17 +135,40 @@
       });
       c.restore();
     }
-    // Calle que se aleja hacia el fondo.
-    c.beginPath();c.moveTo(480,385);c.lineTo(800,385);c.lineTo(1280,720);c.lineTo(0,720);c.closePath();
-    c.fillStyle='#3d344d';c.fill();
-    c.beginPath();c.moveTo(0,720);c.lineTo(440,385);c.lineTo(480,385);c.lineTo(215,720);c.closePath();c.fillStyle='#70627d';c.fill();
-    c.beginPath();c.moveTo(1280,720);c.lineTo(840,385);c.lineTo(800,385);c.lineTo(1065,720);c.closePath();c.fillStyle='#70627d';c.fill();
-    c.lineWidth=8;c.strokeStyle='#dfc29e';
-    c.beginPath();c.moveTo(215,720);c.lineTo(480,385);c.moveTo(1065,720);c.lineTo(800,385);c.stroke();
-    c.fillStyle='#f4dc9d88';
-    for (let i=0;i<4;i++) {
-      const y=425+i*i*18, w=7+i*6;
-      c.save();c.translate(640,y);c.beginPath();c.moveTo(-w,0);c.lineTo(w,0);c.lineTo(w*1.3,5+i*3);c.lineTo(-w*1.3,5+i*3);c.fill();c.restore();
+    // Una perspectiva única: todas las fachadas llegan a la misma
+    // línea de suelo (y=465) desde la que empieza la calzada.
+    rect(c,0,465,WIDTH,255,'#996783');
+    c.beginPath();c.moveTo(0,465);c.lineTo(480,465);
+    c.lineTo(215,720);c.lineTo(0,720);c.closePath();
+    c.fillStyle='#816b87';c.fill();
+    c.beginPath();c.moveTo(800,465);c.lineTo(1280,465);
+    c.lineTo(1280,720);c.lineTo(1065,720);c.closePath();
+    c.fillStyle='#816b87';c.fill();
+    // Carretera conectada exactamente al pie de los edificios laterales.
+    c.beginPath();c.moveTo(480,465);c.lineTo(800,465);
+    c.lineTo(1065,720);c.lineTo(215,720);c.closePath();
+    const asphalt=c.createLinearGradient(0,465,0,720);
+    asphalt.addColorStop(0,'#44374f');asphalt.addColorStop(1,'#302c48');
+    c.fillStyle=asphalt;c.fill();
+    // Bordes de acera y profundidad en la misma perspectiva.
+    c.lineWidth=8;c.strokeStyle='#e8c794';
+    c.beginPath();c.moveTo(215,720);c.lineTo(480,465);
+    c.moveTo(1065,720);c.lineTo(800,465);c.stroke();
+    c.strokeStyle='#3d294b';c.lineWidth=2;
+    for(const side of [-1,1]){
+      for(let i=1;i<6;i++){
+        const y=465+Math.pow(i/5,1.75)*255;
+        const edge=640+side*(160+(y-465)*265/255);
+        c.beginPath();c.moveTo(edge+side*9,y);c.lineTo(side<0?0:1280,y);
+        c.globalAlpha=.12;c.stroke();c.globalAlpha=1;
+      }
+    }
+    c.fillStyle='#f2d39888';
+    for(let i=0;i<4;i++){
+      const z=(i+1)/4,y=465+z*z*220,w=3+z*11;
+      c.beginPath();c.moveTo(640-w,y);c.lineTo(640+w,y);
+      c.lineTo(640+w*1.2,y+3+z*8);c.lineTo(640-w*1.2,y+3+z*8);
+      c.closePath();c.fill();
     }
 
     // Guirnaldas de farolas y banderines.
