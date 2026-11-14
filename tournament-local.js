@@ -110,6 +110,7 @@ function startTournament() {
   const entrants = Array.from($('tournament-players').children, (card, index) => ({
     number: index + 1, fighter: Number(card.dataset.fighter)
   }));
+  TOURNAMENT.entrants = entrants;
   TOURNAMENT.rounds = buildTournament(entrants);
   TOURNAMENT.champion = null;
   TOURNAMENT.bestOf = Number($('tournament-rounds').value);
@@ -117,6 +118,7 @@ function startTournament() {
 }
 
 function showTournamentBracket() {
+  if (TOURNAMENT.champion && TOURNAMENT.phase === 'result' && typeof showTournamentCeremony === 'function') return showTournamentCeremony();
   leaveLocal();
   audio.stopMusic();
   TOURNAMENT.current = null;
