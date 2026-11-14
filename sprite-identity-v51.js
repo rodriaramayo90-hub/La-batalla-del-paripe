@@ -14,6 +14,19 @@ function configureCharacterSprites(){
   put(substitutions,grappleSheets[0],1,3+phase,[lucasArt[0],1,3+phase]);
  }
  put(substitutions,heldSheet,0,3,[lucasArt[1],0,3]);
+ const [drapieMoves,drapieAttacks,drapieReactions,drapieFall]=drapieOutfitArt;
+ for(let col=0;col<6;col++){
+  put(substitutions,atlases[2],0,col,[drapieMoves,0,col]);
+  put(substitutions,actionAtlases[2],0,col,[drapieMoves,1,col]);
+ }
+ for(let phase=0;phase<3;phase++){
+  put(substitutions,finisherAtlases[2],0,phase,[drapieAttacks,1,phase]);
+  put(substitutions,finisherAtlases[6],0,3+phase,[drapieAttacks,1,3+phase]);
+  put(substitutions,grappleSheets[1],1,phase,[drapieReactions,0,phase]);
+  put(substitutions,heldStages[1],1,phase,[drapieReactions,0,3+phase]);
+  put(substitutions,victorySheets[1],1,phase,[drapieReactions,1,phase]);
+  put(substitutions,fallArt[1],1,phase,[drapieFall,0,phase]);
+ }
  SpriteAtlas.draw=function(c,im,row,col,x,y,size=330){
   const replacement=substitutions.get(im)?.get(row*6+col);if(replacement)[im,row,col]=replacement;
   const scale=poseScale(im,row,col);
@@ -45,6 +58,11 @@ function lowPoseTexture(im,cell,id,unit){
 function configureLucasLowRenderer(){
  drawCombatCell=function(im,cells,id,height){
   if(drawLucasLowPose(im,id)||drawMaskedLowPose(im,id))return;
+  if(id===6){
+   const col=im===crouchArt?3:im===lowPunchArt?4:5;
+   SpriteAtlas.draw(ctx,drapieOutfitArt[2],1,col,0,0,330);
+   return;
+  }
   const cell=cells?.[id];if(!cell)return;const key=im.src.split('/').pop(),factor=POSE_SCALES[key]?.[id]||1,unit=330/(im.height/3)*factor,w=cell.w*unit,h=cell.h*unit;
   const gw=im.width/4,gx=id%4*gw,texture=lowPoseTexture(im,cell,id,unit);ctx.drawImage(texture.surface,0,0,texture.w,texture.h,(cell.x-gx-gw/2)*unit,-h,w,h);
  };

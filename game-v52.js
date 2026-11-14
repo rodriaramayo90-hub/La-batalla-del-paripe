@@ -19,15 +19,22 @@ function loadImage(src){const image=new Image();image.src=src;return image}
 const atlases=['normal-v12-a.webp','normal-v12-b.webp','normal-v12-c.webp'].map(n=>loadImage('assets/'+n));
 const specials=['a','b','c'].map(n=>loadImage('assets/specials-v12-'+n+'.webp'));
 const props=loadImage('assets/props-v4.webp'),florPortrait=loadImage('assets/flor-portrait-v4.webp');
-const drapieShotArt=loadImage('assets/drapie-shot-v53.png');drapieShotArt.spriteRows=1;
-const actionAtlases=['a','b','c'].map(n=>loadImage('assets/actions-v12-'+n+'.webp'));const allImages=[...atlases,...specials,...actionAtlases,props,florPortrait,drapieShotArt];
+const drapieOutfitArt=['moves','attacks','reactions','fall'].map((name,index)=>{
+ const image=loadImage('assets/drapie-outfit-'+name+'.webp');
+ image.spriteRows=index===3?1:2;
+ if(index===3)image.spriteCols=3;
+ image.spriteMinHeight=.12;
+ return image;
+});
+const drapieShotArt=drapieOutfitArt[1];
+const actionAtlases=['a','b','c'].map(n=>loadImage('assets/actions-v12-'+n+'.webp'));const allImages=[...atlases,...specials,...actionAtlases,props,florPortrait,...drapieOutfitArt];
 const phoneArt=loadImage('assets/phone-v48.webp');phoneArt.spriteRows=2;allImages.push(phoneArt);
 const crouchArt=loadImage('assets/crouch-v31.webp');const lowPunchArt=loadImage('assets/low-punch-v33.webp'),lowKickArt=loadImage('assets/low-kick-v33.webp');allImages.push(crouchArt,lowPunchArt,lowKickArt);
 const finisherAtlases=['a','b','c','d'].map(n=>{const im=loadImage('assets/finishers-v35-'+n+'.webp');im.spriteRows=3;return im;});const biteArt=loadImage('assets/trex-bite-v35.webp');const revisedFinisherArt=loadImage('assets/finishers-v37-lucas-bites.webp');revisedFinisherArt.spriteRows=2;finisherAtlases.push(revisedFinisherArt);const themedFinisherArt=['a','b'].map(n=>{const im=loadImage('assets/finishers-v38-'+n+'.webp');im.spriteRows=2;return im;});finisherAtlases.push(...themedFinisherArt);const alcaFinisherArt=loadImage('assets/finishers-v39.webp');alcaFinisherArt.spriteRows=2;finisherAtlases.push(alcaFinisherArt);const maskedSheets=['a','b','c'].map(n=>{const im=loadImage('assets/mask-'+n+'-v41.webp');im.spriteRows=2;return im;});const grappleSheets=['a','b','c'].map(n=>{const im=loadImage('assets/grabs-'+n+'-v41.webp');im.spriteRows=2;return im;});const heldSheet=loadImage('assets/held-v41.webp');heldSheet.spriteRows=2;const victorySheets=['a','b','c'].map(n=>{const im=loadImage('assets/victory-'+n+'-v44.webp');im.spriteRows=2;return im;});const lucasArt=['moves','actions'].map(n=>{const im=loadImage('assets/lucas-'+n+'-v45.webp');im.spriteRows=2;return im;});const fallArt=['a','b','c'].map(n=>{const im=loadImage('assets/fall-'+n+'-v47.webp');im.spriteRows=2;im.spriteMinHeight=.12;return im;});const maskStages=loadImage('assets/mask-stages-v48.webp');maskStages.spriteRows=2;maskStages.spriteMinHeight=.12;const heldStages=['a','b','c'].map(n=>{const im=loadImage('assets/held-'+n+'-v48.webp');im.spriteRows=2;return im;});allImages.push(...finisherAtlases,biteArt,...maskedSheets,...grappleSheets,heldSheet,...victorySheets,...lucasArt);
 let assetsLoaded=false;
 const assetReady=Promise.all(allImages.map(im=>im.decode())).then(async()=>{
  configureCharacterSprites();
- const reports=await SpriteAtlas.prepare([...atlases,...actionAtlases,...specials,...finisherAtlases,...maskedSheets,...grappleSheets,heldSheet,...victorySheets,...lucasArt,...fallArt,...heldStages,phoneArt,maskStages,drapieShotArt]);
+ const reports=await SpriteAtlas.prepare([...atlases,...actionAtlases,...specials,...finisherAtlases,...maskedSheets,...grappleSheets,heldSheet,...victorySheets,...lucasArt,...fallArt,...heldStages,phoneArt,maskStages,...drapieOutfitArt]);
  if(reports.some(report=>report.fallback))throw new Error('Sprite atlas extraction incomplete');
  prepareDrapieShot();normalizePhonePoses();crouchCells=combatSheet(crouchArt);lowPunchCells=combatSheet(lowPunchArt);lowKickCells=combatSheet(lowKickArt);prepareKnockdownBounds();prepareMaskedFloorBounds();prepareHeldPoseBounds();prepareFallBounds();assetsLoaded=true;return true;
 });assetReady.catch(()=>{});
@@ -65,7 +72,7 @@ for(const event of ['pointerdown','pointerup','touchend','click','keydown'])docu
 const MAX_HP=220,DAMAGE_SCALE=.85;let practice=false,selectPractice=false,practiceStage=0;
 let introFrames=0,matchFrames=99*60,comboTimer=0,comboCount=0,bestCombo=0,score=0,exFlash=0,trailClock=0;let trails=[];const lastTap={left:-10000,right:-10000};const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ctx=$('canvas').getContext('2d');
-function portraitMarkup(i){if(i===7)return '<img src="assets/flor-portrait-v4.webp" alt="Flor Rubia">';if(i===9)return '<div class="corrected-portrait" role="img" aria-label="Malefica"></div>';return `<img src="assets/face${i}.jpg" alt="${fighters[i][0]}">`}
+function portraitMarkup(i){if(i===6)return '<img src="assets/drapie-outfit-portrait.webp" alt="La Drapie">';if(i===7)return '<img src="assets/flor-portrait-v4.webp" alt="Flor Rubia">';if(i===9)return '<div class="corrected-portrait" role="img" aria-label="Malefica"></div>';return `<img src="assets/face${i}.jpg" alt="${fighters[i][0]}">`}
 function show(id){projectileClash=null;resetRoundEnd();if(typeof PAD!=='undefined')PAD.soloPause=false;resetHumanInputs();cancelCharges();battleToken++;keys={};clearActionBuffer();cancelAnimationFrame(animationId);['menu','select','game','online-screen','tower','local-screen','tournament-screen'].forEach(s=>$(s)?.classList.toggle('hidden',s!==id));mode=id;syncPortraitMode()}
 function goMenu(){if(typeof leaveTournament==='function')leaveTournament();leaveLocal();if(typeof ONLINE!=='undefined'&&ONLINE.ws){onlineLeave();return;}cancelSpeech();audio.stopMusic();practice=false;$('game').classList.remove('practice');show('menu')}
 function showSelect(forPractice=false){cancelSpeech();audio.stopMusic();sfx('select');selectPractice=forPractice;show('select');$('select-title').textContent=forPractice?'ELIGE PARA PRACTICAR':'ELIGE TU LUCHADOR';$('start').textContent=forPractice?'🥋 ENTRAR A PRÁCTICA':'⚡ COMENZAR COMBATE';renderRoster();document.querySelector('.roster-scroll').scrollTop=0}
