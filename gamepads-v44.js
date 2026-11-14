@@ -4,12 +4,14 @@ function isPS4(p){return /054c|dualshock|wireless controller|playstation|sony/i.
 // USB IDs 057e:2006 (L) and 057e:2007 (R), plus the names exposed by OS drivers.
 function joyConSide(p){
  const id=(p.id||'').toLowerCase();
+ // A paired L+R set is ONE full-size controller, not a single left Joy-Con.
+ if(/joy[ -]?con\s*(?:l\s*\+\s*r|left\s*\+\s*right)/i.test(id)||(/057e/.test(id)&&/\b200e\b/.test(id)))return '';
  if(/joy[ -]?con[^a-z0-9]*(?:\(l\)|left|l\b)/i.test(id)||(/057e/.test(id)&&/\b2006\b/.test(id)))return 'L';
  if(/joy[ -]?con[^a-z0-9]*(?:\(r\)|right|r\b)/i.test(id)||(/057e/.test(id)&&/\b2007\b/.test(id)))return 'R';
  return '';
 }
 function isSwitchPad(p){return /switch pro|nintendo.*(?:pro controller|charging grip)|057e.*(?:2009|200e)/i.test(p.id||'');}
-function padName(p){const side=joyConSide(p);return side?'Joy-Con '+(side==='L'?'izquierdo':'derecho'):isPS4(p)?'PS4':isSwitchPad(p)?'Switch Pro':'mando';}
+function padName(p){const side=joyConSide(p);return side?'Joy-Con '+(side==='L'?'izquierdo':'derecho'):/joy[ -]?con\s*l\s*\+\s*r/i.test(p.id||'')?'Joy-Con L+R':isSwitchPad(p)?'Switch Pro':isPS4(p)?'PS4':'mando';}
 function availablePads(){try{return Array.from(navigator.getGamepads?.()||[]).filter(p=>p&&p.connected!==false&&(p.mapping==='standard'||isPS4(p)&&p.buttons.length>=16||joyConSide(p)&&p.buttons.length>=6||isSwitchPad(p)&&p.buttons.length>=12));}catch(_){return [];}}
 function padButton(p,n){const b=p.buttons[n];return !!(b&&(b.pressed||b.value>.5));}
 function padState(p){
@@ -30,8 +32,8 @@ function padState(p){
    special:padButton(p,face.special),
    defend:padButton(p,4)||(!standard&&padButton(p,14)),
    grab:padButton(p,5)||(!standard&&padButton(p,15)),
-   confirm:jump,back:padButton(p,side==='L'?10:11),
-   options:padButton(p,side==='L'?8:9)};
+   confirm:jump,back:padButton(p,standard?10:side==='L'?10:11),
+   options:padButton(p,standard?9:side==='L'?8:9)};
  }
  const x=Number(p.axes[0]||0),y=Number(p.axes[1]||0);
  return{left:padButton(p,14)||x<-.35,right:padButton(p,15)||x>.35,down:padButton(p,13)||y>.45,up:padButton(p,12)||y<-.55,jump:padButton(p,0)||padButton(p,12)||y<-.55,punch:padButton(p,2),kick:padButton(p,3),special:padButton(p,1),defend:padButton(p,4)||padButton(p,6),grab:padButton(p,5),confirm:padButton(p,0),back:padButton(p,1),options:padButton(p,9)};
