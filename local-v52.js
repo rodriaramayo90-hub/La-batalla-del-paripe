@@ -4,7 +4,7 @@ const SECOND={keys:{},actions:[],charges:new Map(),lastTap:{left:-10000,right:-1
 let HUMAN_JUMP=null;
 const HUMAN_SOURCES=[new Map(),new Map()];
 const SECOND_MAPPING={KeyA:'left',KeyD:'right',KeyW:'jump',KeyS:'down',KeyZ:'punch',KeyX:'kick',KeyC:'special',KeyV:'defend',KeyB:'grab'};
-function resetHumanInputs(){HUMAN_JUMP=null;lastTap.left=lastTap.right=-10000;SECOND.jumpTap=null;for(const map of HUMAN_SOURCES)map.clear();SECOND.keys={};SECOND.actions=[];SECOND.charges.clear();SECOND.lastTap={left:-10000,right:-10000};}
+function resetHumanInputs(){HUMAN_JUMP=null;if(player)player.parryWindow=0;if(enemy)enemy.parryWindow=0;lastTap.left=lastTap.right=-10000;SECOND.jumpTap=null;for(const map of HUMAN_SOURCES)map.clear();SECOND.keys={};SECOND.actions=[];SECOND.charges.clear();SECOND.lastTap={left:-10000,right:-10000};}
 function cancelSecondCharges(){SECOND.charges.clear();}
 function localKeyboardAllowed(slot){return !LOCAL.active||LOCAL.controls[slot]==='keyboard';}
 function handleHumanKeyDown(e){
@@ -32,7 +32,11 @@ function humanInput(slot,key,pressed,source){
   return;
  }
  if(key==='special'||key==='grab'){if(pressed&&!ending&&introFrames<=0){if(slot===0)bufferAction(key);else queueSecond(key);}return;}
- const map=HUMAN_SOURCES[slot];let sources=map.get(key);if(!sources){sources=new Set();map.set(key,sources);}const was=sources.has(source);if(pressed)sources.add(source);else sources.delete(source);state[key]=sources.size>0;
+ const map=HUMAN_SOURCES[slot];let sources=map.get(key);if(!sources){sources=new Set();map.set(key,sources);}const was=sources.has(source),wasHeld=sources.size>0;if(pressed)sources.add(source);else sources.delete(source);state[key]=sources.size>0;
+ if(key==='defend'&&pressed&&!wasHeld&&!ending&&introFrames<=0){
+  if(slot===0&&typeof ONLINE!=='undefined'&&ONLINE.active&&ONLINE.role===1)ONLINE.parryTap=true;
+  else armParry(a);
+ }
  if(pressed&&!was){
   if(key==='left'||key==='right'){if(slot===0)tapDirection(key);else{const now=performance.now();if(now-SECOND.lastTap[key]<260){dashUnit(a,key==='left'?-1:1);SECOND.lastTap[key]=-10000;}else SECOND.lastTap[key]=now;}}
   if(key==='down'){if(slot===0)captureLowChord();else for(const h of SECOND.charges.values())h.low=true;}

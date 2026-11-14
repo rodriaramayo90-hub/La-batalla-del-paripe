@@ -16,7 +16,7 @@ function onlineLobby(room){ONLINE.data=room;const me=room.players.find(p=>p.role
 function onlineMessage(m){
  if(m.type==='lobby'){ONLINE.connected=true;onlineLobby(m.room);}
  if(m.type==='disconnected')onlineDisconnected('Tu amigo salió de la sala. Creá otra para volver a jugar.');
- if(m.type==='input'&&ONLINE.role===0){ONLINE.lastInput=performance.now();const i=m.input||{};const jumpPending=ONLINE.remote.keys.jump;ONLINE.remote.keys=Object.fromEntries(['left','right','jump','down','defend'].map(k=>[k,!!i.keys?.[k]]));ONLINE.remote.keys.jump=jumpPending||!!i.keys?.jump;if(i.keys?.jump&&i.keys?.defend)ONLINE.remote.escapeTap=true;for(const action of (Array.isArray(i.actions)?i.actions:[]).slice(0,6))if(action.type==='clash'&&projectileClash)clashTap(1);else if(['punch','kick','special','grab'].includes(action.type))ONLINE.remote.actions.push({...action,ttl:48});ONLINE.remote.actions=ONLINE.remote.actions.slice(-6);}
+ if(m.type==='input'&&ONLINE.role===0){ONLINE.lastInput=performance.now();const i=m.input||{};if(i.parryTap===true)ONLINE.remote.parryTap=true;const jumpPending=ONLINE.remote.keys.jump;ONLINE.remote.keys=Object.fromEntries(['left','right','jump','down','defend'].map(k=>[k,!!i.keys?.[k]]));ONLINE.remote.keys.jump=jumpPending||!!i.keys?.jump;if(i.keys?.jump&&i.keys?.defend)ONLINE.remote.escapeTap=true;for(const action of (Array.isArray(i.actions)?i.actions:[]).slice(0,6))if(action.type==='clash'&&projectileClash)clashTap(1);else if(['punch','kick','special','grab'].includes(action.type))ONLINE.remote.actions.push({...action,ttl:48});ONLINE.remote.actions=ONLINE.remote.actions.slice(-6);}
  if(m.type==='start')onlineStart(m.room);
  if(m.type==='frame'&&ONLINE.role===1&&ONLINE.active&&m.round===ONLINE.round){onlineApply(m.state);ONLINE.lastFrame=performance.now();}
  if(m.type==='result'){
@@ -24,7 +24,7 @@ function onlineMessage(m){
   $('online-ready').textContent=m.room.phase==='matchEnd'?'REVANCHA':'SIGUIENTE RONDA';
  }
 }
-function onlineStart(room){ONLINE.result=null;ONLINE.resultWaiting=false;ONLINE.data=room;ONLINE.round=room.round;ONLINE.active=true;ONLINE.remote={keys:{},actions:[]};ONLINE.jumpTap=null;ONLINE.lastInput=ONLINE.lastFrame=performance.now();selected=room.players.find(p=>p.role===ONLINE.role).character;queue=[room.players.find(p=>p.role!==ONLINE.role).character];battle=0;show('game');newBattle();setStage(onlineStageIndex(room));$('arena-label').textContent='Contra un amigo · '+room.wins.join(' — ');$('round').textContent='RONDA '+room.round;}
+function onlineStart(room){ONLINE.result=null;ONLINE.resultWaiting=false;ONLINE.data=room;ONLINE.round=room.round;ONLINE.active=true;ONLINE.remote={keys:{},actions:[]};ONLINE.jumpTap=ONLINE.parryTap=null;ONLINE.lastInput=ONLINE.lastFrame=performance.now();selected=room.players.find(p=>p.role===ONLINE.role).character;queue=[room.players.find(p=>p.role!==ONLINE.role).character];battle=0;show('game');newBattle();setStage(onlineStageIndex(room));$('arena-label').textContent='Contra un amigo · '+room.wins.join(' — ');$('round').textContent='RONDA '+room.round;}
 function onlineFinish(win){
  if(ending)return;const winner=player.hp===enemy.hp?2:win?0:1;
  startRoundEnd(winner,()=>{onlinePublish();onlineSend({type:'result',round:ONLINE.round,winner});});onlinePublish();
@@ -44,9 +44,10 @@ async function onlineReadyFromResult(){
 function onlineReturnToRoom(){if(!ONLINE.result)return;show('online-screen');audio.stopMusic();onlineLobby(ONLINE.data);}
 
 function onlineRemoteStep(dt){
- const a=enemy,b=player,i=ONLINE.remote;if(performance.now()-ONLINE.lastInput>800){i.keys={};i.actions=[];}
+ const a=enemy,b=player,i=ONLINE.remote;if(performance.now()-ONLINE.lastInput>800){i.keys={};i.actions=[];i.parryTap=false;}
  i.actions.forEach(x=>x.ttl-=dt);i.actions=i.actions.filter(x=>x.ttl>0);
  if(i.escapeTap||i.keys.defend&&i.keys.jump){escapeUnit(a,b);i.escapeTap=false;i.keys.jump=false;}
+ if(i.parryTap){i.parryTap=false;armParry(a);}
  posture(a,i.keys.down);if(i.actions[0]?.type==='grab')consumeInput(a,b,i.actions);
  a.blocking=(i.keys.defend||a.blockstun>0)&&a.stun<=0&&!a.attack&&!a.escaping&&a.y===0;
  if(a.stun<=0&&a.blockstun<=0&&!a.escaping&&!a.blocking){
@@ -60,7 +61,7 @@ function onlineApply(s){projectileClash=s.clash?{...s.clash,taps:[s.clash.taps[1
  const unpack=a=>({...a,castHits:new Set(a.castHits)});enemy=unpack(s.p);player=unpack(s.e);projectiles=s.projectiles.map(p=>({...p,owner:p.owner===0?enemy:player}));effects=s.effects;frame=s.frame;matchFrames=s.matchFrames;introFrames=s.introFrames;ending=s.ending;announcement=s.announcement;announceTime=s.announceTime;applyRoundEnd(s.roundEnd);trails=[];for(const e of s.events||[]){if(e.voice!==undefined)audio.playVoice(e.voice);else audio.cue(e.type,e.opts);}updateHud();}
 function onlineTick(t){
  if(!ONLINE.active)return false;
- if(ONLINE.role===1){const dt=last?Math.min((t-last)/16.67,2):1;last=t;updateCharge(dt);if(t-(ONLINE.sentAt||0)>33){const actions=inputQueue.splice(0);clearActionBuffer();const input={keys:{...keys},actions};if(ONLINE.jumpTap){input.keys.jump=true;if(ONLINE.jumpTap.escape)input.keys.defend=true;}ONLINE.jumpTap=null;if(syncPortraitMode())input.keys={};onlineSend({type:'input',input});keys.jump=false;ONLINE.sentAt=t;}if(performance.now()-ONLINE.lastFrame>5000){onlineDisconnected('La conexión se interrumpió. Volvé a crear una sala.');return true;}draw();animationId=requestAnimationFrame(loop);return true;}
+ if(ONLINE.role===1){const dt=last?Math.min((t-last)/16.67,2):1;last=t;updateCharge(dt);if(t-(ONLINE.sentAt||0)>33){const actions=inputQueue.splice(0);clearActionBuffer();const input={keys:{...keys},actions,parryTap:!!ONLINE.parryTap};ONLINE.parryTap=false;if(ONLINE.jumpTap){input.keys.jump=true;if(ONLINE.jumpTap.escape)input.keys.defend=true;}ONLINE.jumpTap=null;if(syncPortraitMode()){input.keys={};input.parryTap=false;}onlineSend({type:'input',input});keys.jump=false;ONLINE.sentAt=t;}if(performance.now()-ONLINE.lastFrame>5000){onlineDisconnected('La conexión se interrumpió. Volvé a crear una sala.');return true;}draw();animationId=requestAnimationFrame(loop);return true;}
  if(t-(ONLINE.sentAt||0)>50){onlinePublish();ONLINE.sentAt=t;}return false;
 }
 document.addEventListener('DOMContentLoaded',()=>{if(new URL(location.href).searchParams.has('room'))openOnline();});
