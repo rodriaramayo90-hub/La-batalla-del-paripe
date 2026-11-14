@@ -67,28 +67,74 @@
     c.restore();
   }
 
+  // Nuevas ilustraciones completas: palmas juntas y copa agarrada por la mano
+  // dentro de la imagen. Primera hoja: luchadores 0..3; segunda: 4..7.
+  const sheets=['assets/ceremony-new-a.png','assets/ceremony-new-b.png'].map(src=>{
+    const im=new Image();im.src=src;return im;
+  });
+  let artworkReady=false, artworkFailed=false, preload=null;
+  const CUT_W=384,CUT_H=512;
+
+  function isPaper(data,p) {
+    const r=data[p],g=data[p+1],b=data[p+2];
+    return r>=225 && g>=225 && b>=225 && Math.max(r,g,b)-Math.min(r,g,b)<=24;
+  }
+  function removeWhiteCheckerboard(c) {
+    // Solo el fondo conectado a los bordes: las batas y zapatos blancos
+    // encerrados en la silueta no desaparecen.
+    const image=c.getImageData(0,0,CUT_W,CUT_H),a=image.data;
+    const total=CUT_W*CUT_H,seen=new Uint8Array(total);
+    const stack=new Int32Array(total);let head=0,tail=0;
+    const push=i=>{
+      if(i<0||i>=total||seen[i]||!isPaper(a,i*4))return;
+      seen[i]=1;stack[tail++]=i;
+    };
+    for(let x=0;x<CUT_W;x++){push(x);push((CUT_H-1)*CUT_W+x);}
+    for(let y=0;y<CUT_H;y++){push(y*CUT_W);push(y*CUT_W+CUT_W-1);}
+    while(head<tail){
+      const i=stack[head++],x=i%CUT_W,y=(i/CUT_W)|0;
+      a[i*4+3]=0;
+      if(x>0)push(i-1);
+      if(x<CUT_W-1)push(i+1);
+      if(y>0)push(i-CUT_W);
+      if(y<CUT_H-1)push(i+CUT_W);
+    }
+    c.putImageData(image,0,0);
+  }
+
+  function genuineFrame(id,kind,step){
+    const sheet=id<4?0:1;
+    const canvas=document.createElement('canvas');
+    canvas.width=CUT_W;canvas.height=CUT_H;
+    const c=canvas.getContext('2d',{willReadFrequently:true});
+    const row=kind==='clap'||step===0?0:1;
+    const x=(id%4)*CUT_W,y=row*CUT_H;
+    c.drawImage(sheets[sheet],x,y,CUT_W,CUT_H,0,0,CUT_W,CUT_H);
+    if(sheet===1)removeWhiteCheckerboard(c);
+    return canvas;
+  }
+
   function compose(id,kind,step) {
+    if(id<8 && artworkReady)return genuineFrame(id,kind,step);
+    // Conserva el arte original para 8..11 en vez de sustituir
+    // sus caras o cuerpos por otro personaje.
     const frame=document.createElement('canvas');
     frame.width=W;frame.height=H;
     const c=frame.getContext('2d',{alpha:true});
     if(kind==='clap') {
       const already=ORIGINAL_CLAP_POSE[id];
-      // Fotogramas ENTEROS del luchador: cierre / apertura / cierre / apertura.
-      // La alternancia de guardia y recuperación mueve los brazos propios.
-      if(already!==undefined && (step===0 || step===2)) victoryFrame(c,id,already);
-      else actionFrame(c,id,[0,3,0,1][step%4]);
+      if(already!==undefined) victoryFrame(c,id,already);
+      else victoryFrame(c,id,0);
+    } else if(step===0){
+      victoryFrame(c,id,0);
     } else {
-      if(step===0) {
-        victoryFrame(c,id,0);
-      } else {
-        bakeCup(c,id,step===2?.065:-.025);
-        victoryFrame(c,id,WINNER_POSE[id]);
-      }
+      bakeCup(c,id,step===2?.065:-.025);
+      victoryFrame(c,id,WINNER_POSE[id]);
     }
     return frame;
   }
 
-  function sprite(id,kind,step) {
+    function sprite(id,kind,step) {
     id=Number(id);
     if(!Number.isInteger(id)||id<0||id>=fighters.length) return null;
     const total=kind==='clap'?4:3;
@@ -101,25 +147,33 @@
   function draw(c,id,kind,x,foot,size,step,dir) {
     const img=sprite(id,kind,step);
     if(!img)return;
-    const scale=size/BODY;
+    const genuine=id<8 && artworkReady;
+    const scale=genuine?size/CUT_H:size/BODY;
     c.save();
     c.translate(x,foot);
-    c.scale(dir*scale,scale);
-    c.drawImage(img,-CX,-FOOT);
+    const applausePulse=kind==='clap' && genuine ? 1+Math.sin(step*1.5708)*.016 : 1;
+    c.scale(dir*scale*applausePulse,scale);
+    c.drawImage(img,-img.width/2,-img.height);
     c.restore();
   }
 
-  function prewarm(entrants,champion) {
+  async function ensureImages(){
+    if(artworkReady||artworkFailed)return;
+    if(!preload)preload=Promise.all(sheets.map(im=>im.decode())).then(()=>{
+      artworkReady=true;cache.clear();
+    }).catch(err=>{artworkFailed=true;console.warn('Ceremony sprites unavailable',err);});
+    await preload;
+  }
+  async function prewarm(entrants,champion) {
+    await ensureImages();
     const unique=new Set();
     for(const entrant of entrants||[]) {
       if(unique.has(entrant.number))continue;
       unique.add(entrant.number);
-      const id=entrant.fighter;
-      const isWinner=entrant.number===champion.number;
-      const kind=isWinner?'winner':'clap';
-      const frames=isWinner?3:4;
+      const id=entrant.fighter,kind=entrant.number===champion.number?'winner':'clap';
+      const frames=kind==='winner'?3:4;
       for(let frame=0;frame<frames;frame++)sprite(id,kind,frame);
     }
   }
-  window.CeremonySpriteAtlas={draw,prewarm,clear:()=>cache.clear(),get count(){return cache.size}};
+    window.CeremonySpriteAtlas={draw,prewarm,clear:()=>cache.clear(),get count(){return cache.size}};
 })();
