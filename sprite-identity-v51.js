@@ -41,6 +41,13 @@ function drawLucasLowPose(im,id){
 // Use anatomical calibration instead of fitting each silhouette to a box.
 // Each special and finisher uses a shared scale across its animation phases.
 function poseScale(im,row,col){
+ // The impact drawings already bend the knees and torso. Their original
+ // cell scale matches the idle drawings more closely than the old hit factors.
+ if(col===5&&(actionAtlases.includes(im)||im===lucasArt[1]&&row===1||
+   im===drapieOutfitArt[0]&&row===1||im===maskedSheets[0]&&row===1))return 1;
+ // T-Rex's leg-throw sequence uses the idle sprite's scale, including
+ // the frame held while the detached leg is in flight.
+ if(im===specials[0]&&row===1||im===maskedSheets[1]&&row===0)return 1;
  const name=im.src.split('/').pop();
  return POSE_SCALES[name]?.[row*6+col]??1;
 }

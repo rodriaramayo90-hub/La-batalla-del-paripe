@@ -6,6 +6,7 @@ const STAGES=[
  {name:'Terraza Majul',src:'assets/terraza-majul-v52.webp',motion:'gulls'}
 ];
 let currentStage=0,lastStagePaint=-Infinity;
+const SEA_PADDING=12;
 const stageImages=STAGES.map(stage=>{const im=new Image();im.src=stage.src;return im;}),waterScenes=new Map();
 function setStage(index){
  currentStage=((Math.trunc(Number(index)||0)%STAGES.length)+STAGES.length)%STAGES.length;
@@ -33,12 +34,27 @@ function prepareWater(index){
   if(wet){pixels.data[j]=pixels.data[j+1]=pixels.data[j+2]=255;pixels.data[j+3]=255;top=Math.min(top,y);bottom=Math.max(bottom,y);}
  }
  mc.clearRect(0,0,960,540);mc.putImageData(pixels,0,0);
- analysis.width=analysis.height=0;const offset=Math.max(0,top-5),height=Math.ceil((bottom+6-offset)/2)*2,crop=document.createElement('canvas');crop.width=960;crop.height=height;crop.getContext('2d').drawImage(mask,0,offset,960,height,0,0,960,height);mask.width=mask.height=0;const surface=document.createElement('canvas');surface.width=1440;surface.height=height*1.5;const cache={source,mask:crop,surface,c:surface.getContext('2d'),top,bottom,offset};waterScenes.set(index,cache);return cache;
+ analysis.width=analysis.height=0;const offset=Math.max(0,top-SEA_PADDING),height=Math.ceil((bottom+SEA_PADDING+1-offset)/2)*2,crop=document.createElement('canvas');crop.width=960;crop.height=height;crop.getContext('2d').drawImage(mask,0,offset,960,height,0,0,960,height);mask.width=mask.height=0;const surface=document.createElement('canvas');surface.width=1440;surface.height=height*1.5;const cache={source,mask:crop,surface,c:surface.getContext('2d'),top,bottom,offset};waterScenes.set(index,cache);return cache;
 }
 function drawSea(c,index,t){
  const water=prepareWater(index);if(!water)return;const x=water.c,scale=water.surface.width/960;x.clearRect(0,0,water.surface.width,water.surface.height);
- const displacement=y=>{const depth=Math.max(0,Math.min(1,(y-water.top)/(water.bottom-water.top||1))),amplitude=.55+depth*1.15;return{dx:Math.sin(t*1.25-y*.08)*2.5*amplitude,dy:Math.sin(t*1.65-y*.12)*1.7*amplitude};};
- for(let y=water.top-5;y<=water.bottom+5;y+=3){const a=displacement(y),b=displacement(y+3);x.drawImage(water.source,0,y*scale,water.source.width,3*scale,a.dx*scale,(y+a.dy-water.offset)*scale,water.surface.width,(3.15+b.dy-a.dy)*scale);}
+ const displacement=y=>{
+  const depth=Math.max(0,Math.min(1,(y-water.top)/(water.bottom-water.top||1)));
+  const amplitude=.7+depth*1.4;
+  const swell=t*2.1-y*.066;
+  return {
+   dx:amplitude*(4.6*Math.sin(swell)+.9*Math.sin(1.35*swell)),
+   dy:amplitude*(3.25*Math.sin(swell+.65)+.7*Math.sin(1.4*swell))
+  };
+ };
+ const overscan=SEA_PADDING*scale;
+ for(let y=water.offset;y<water.offset+water.surface.height/scale;y+=3){
+  const a=displacement(y),b=displacement(y+3);
+  // Overscan keeps the shifted strips opaque at the edge of the screen.
+  x.drawImage(water.source,0,y*scale,water.source.width,3*scale,
+   a.dx*scale-overscan,(y+a.dy-water.offset)*scale,
+   water.surface.width+2*overscan,(3.15+b.dy-a.dy)*scale);
+ }
  x.globalCompositeOperation='destination-in';x.drawImage(water.mask,0,0,water.surface.width,water.surface.height);x.globalCompositeOperation='source-over';c.save();c.globalAlpha=.92;c.drawImage(water.surface,0,water.offset,960,water.surface.height/scale);c.restore();
 }
 const flagTextures=[];
