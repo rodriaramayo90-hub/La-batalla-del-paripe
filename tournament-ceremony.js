@@ -374,7 +374,7 @@
     const c=scene.ctx;c.clearRect(0,0,WIDTH,HEIGHT);
     background(c,seconds);
     spectators(scene,seconds);
-    const top=529;
+    const top=506;
     const move=ease((seconds-1.9)/1.1);
     const podiumY=top+(1-move)*260;
     podium(c,podiumY,scene.winner);
