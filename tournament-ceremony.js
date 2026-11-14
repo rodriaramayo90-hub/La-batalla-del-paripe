@@ -353,7 +353,9 @@
     state.phase='ceremony';
     root.hidden=false;
     root.querySelector('#ceremony-a11y').textContent='Campeón: '+fighters[state.champion.fighter][0]+'. Los otros '+losers.length+' participantes aplauden en Calle Derrota.';
-    const scene={root,ctx,winner:state.champion,losers,raf:0,start:0,lastDraw:0,padPrev:[]};
+    const connectedPads=typeof navigator.getGamepads==='function'?Array.from(navigator.getGamepads()||[]).filter(Boolean):[];
+    const padPrev=connectedPads.map(pad=>({confirm:!!(pad.buttons[0]?.pressed||pad.buttons[9]?.pressed),back:!!pad.buttons[1]?.pressed}));
+    const scene={root,ctx,winner:state.champion,losers,raf:0,start:0,lastDraw:0,padPrev};
     running=scene;
     document.getElementById('ceremony-continue').onclick=()=>{
       if(running!==scene)return;
