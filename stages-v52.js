@@ -57,6 +57,67 @@ function drawSea(c,index,t){
  }
  x.globalCompositeOperation='destination-in';x.drawImage(water.mask,0,0,water.surface.width,water.surface.height);x.globalCompositeOperation='source-over';c.save();c.globalAlpha=.92;c.drawImage(water.surface,0,water.offset,960,water.surface.height/scale);c.restore();
 }
+// Coordinates in the backdrop's 960 × 540 drawing space. Keep the
+// moving texture clear of the tower, lamp, branches and skyline.
+const seaSkyRegions={
+ 0:[[[151,106],[202,80],[344,57],[406,27],[535,11],[545,131],[512,168],[413,178],[341,163],[254,141]],[[699,125],[743,48],[823,18],[948,12],[948,193],[865,205],[772,177]]],
+ 2:[[[343,99],[413,43],[491,14],[650,16],[786,11],[878,10],[881,63],[837,112],[762,126],[717,154],[585,156],[455,150]]]
+};
+const seaSkies=new Map();
+function drawSeaClouds(c,index,t){
+ let sky=seaSkies.get(index);
+ if(!sky){
+  const im=stageImages[index];
+  if(!im.complete||!im.naturalWidth)return;
+  const source=stageCanvas(),mask=stageCanvas(),surface=stageCanvas();
+  coverStage(source.getContext('2d'),im);
+  const m=mask.getContext('2d');
+  m.filter='blur(6px)';
+  for(const polygon of seaSkyRegions[index]){
+   m.beginPath();
+   polygon.forEach(([x,y],i)=>i?m.lineTo(x,y):m.moveTo(x,y));
+   m.closePath();
+   m.fill();
+  }
+  sky={source,mask,surface,c:surface.getContext('2d')};
+  seaSkies.set(index,sky);
+ }
+ const layer=sky.c;
+ layer.clearRect(0,0,960,540);
+ layer.drawImage(sky.source,11*Math.sin(t*.34),3*Math.sin(t*.25));
+ layer.globalCompositeOperation='destination-in';
+ layer.drawImage(sky.mask,0,0);
+ layer.globalCompositeOperation='source-over';
+ c.drawImage(sky.surface,0,0);
+}
+function drawLighthouseBeam(c,t){
+ const x=601,y=46,phase=t*Math.PI/5;
+ const direction=Math.cos(phase);
+ const angle=Math.atan2(.40*Math.sin(phase),direction);
+ const length=180+190*Math.abs(direction);
+ const beam=c.createLinearGradient(0,0,length,0);
+ beam.addColorStop(0,'rgba(255,226,159,.62)');
+ beam.addColorStop(.45,'rgba(255,217,156,.26)');
+ beam.addColorStop(1,'rgba(255,207,155,0)');
+ c.save();
+ c.beginPath();
+ c.rect(0,0,960,151);
+ c.rect(574,55,55,96);
+ c.clip('evenodd');
+ c.translate(x,y);
+ c.rotate(angle);
+ c.fillStyle=beam;
+ for(const width of [.055,.105,.17]){
+  c.globalAlpha=.28+.30*Math.abs(direction);
+  c.beginPath();
+  c.moveTo(0,0);
+  c.lineTo(length,-length*width);
+  c.lineTo(length,length*width);
+  c.closePath();
+  c.fill();
+ }
+ c.restore();
+}
 const flagTextures=[];
 function flagTexture(kind){
  if(flagTextures[kind])return flagTextures[kind];const surface=document.createElement('canvas');surface.width=96;surface.height=64;const c=surface.getContext('2d');
@@ -84,7 +145,11 @@ function drawTerraceGulls(c,t){
 }
 function drawStageEnvironment(c,time=performance.now()/1000){
  const t=typeof reducedMotion!=='undefined'&&reducedMotion?0:time,stage=STAGES[currentStage];
- if(stage.motion==='sea')drawSea(c,currentStage,t);else if(stage.motion==='flags')drawPitaFlags(c,t);else if(stage.motion==='gulls')drawTerraceGulls(c,t);
+ if(stage.motion==='sea'){
+  drawSeaClouds(c,currentStage,t);
+  drawSea(c,currentStage,t);
+  if(currentStage===0)drawLighthouseBeam(c,t);
+ }else if(stage.motion==='flags')drawPitaFlags(c,t);else if(stage.motion==='gulls')drawTerraceGulls(c,t);
 }
 
 // A separate high-resolution backdrop keeps the sea as crisp as the static art.
