@@ -106,8 +106,8 @@ function position(t){
  return {z:-130+enter*495+punchZ*233,k:-180+enter*470+punchK*411};
 }
 function poses(t){
- const z=t<38?0:t<93?1:t<116?2:t<136?4:t<162?2:t<232?4:t<275?3:2;
- const k=t<38?0:t<93?1:t<152?2:t<189?4:t<221?2:t<273?4:t<302?5:2;
+ const z=t<38?0:t<93?1:t<116?2:t<136?4:t<162?2:t<210?4:t<258?3:t<300?4:2;
+ const k=t<38?0:t<93?1:t<152?2:t<189?4:t<221?2:t<260?3:t<295?4:t<310?5:2;
  return {z,k};
 }
 function cinematic(){
