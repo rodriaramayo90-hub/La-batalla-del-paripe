@@ -81,7 +81,7 @@ function drawActor(t){
   ctx.drawImage(DS.art,(phase%4)*cw,Math.floor(phase/4)*ch,cw,ch,-200,-374,400,400);
  }else{
   // Fully playable fallback while optional illustrated sprites load.
-  SpriteAtlas.draw(ctx,drapieOutfitArt[0],0,phase>=291?4:0,0,0,330);
+  SpriteAtlas.draw(ctx,drapieOutfitArt[0],0,phase>=9?4:0,0,0,330);
   if(t>=32&&t<260){roundRect(57,-248,26,48,5,'#1b2339','#9affff');}
  }
  ctx.restore();
