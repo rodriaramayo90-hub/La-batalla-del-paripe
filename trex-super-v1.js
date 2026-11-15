@@ -167,6 +167,12 @@ function cinematic(){
     piece(900,600,300,300); // Remate
     piece(850,815,50,85);   // Recuperar pierna trasera que quedó en celda previa
    }
+  }else if(idx===1){
+   // Primer arrodillamiento con el bolso: el extremo derecho contiene
+   // un fragmento de pierna perteneciente al sprite siguiente.
+   // Se conservan el cuerpo, las manos y la bolsa originales.
+   var cleanWidth=cw*260/300;
+   ctx.drawImage(sheet,cw,0,cleanWidth,ch,-200,-355,400*260/300,400);
   }else if(idx===2){
    // Pie izquierdo: la hoja original lo cortaba en x=600.
    // Recuperar el margen de la celda anterior sin deformar al personaje.
