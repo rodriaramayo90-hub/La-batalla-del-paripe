@@ -118,7 +118,7 @@ function visualIndex(t){
  if(t<15)return 0;if(t<32)return 1;if(t<44)return 2;
  // El primer sprite de inflado original (3) desplaza la pierna de apoyo.
  // Repetir un bombeo con pies estables conserva el ritmo sin esa pierna suelta.
- if(t<124)return [4,5,4,6,7][Math.min(4,Math.floor((t-44)/16))];
+ if(t<124)return [4,4,6,6,7][Math.min(4,Math.floor((t-44)/16))];
  if(t<138)return 8;if(t<151)return 9;if(t<179)return 10;return 11;
 }
 function drawText(c,line,size,y,color){
