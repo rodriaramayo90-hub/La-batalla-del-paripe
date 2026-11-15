@@ -2,22 +2,23 @@
    Safe for solo, practice and local multiplayer. Existing normal special is preserved. */
 (function(){
 'use strict';
-var SUP={active:false,age:0,actor:null,victim:null,landed:false,blocked:false,miss:false,frames:[],length:198,ready:false,voice:false};
+var SUP={active:false,age:0,actor:null,victim:null,landed:false,blocked:false,miss:false,frames:[],length:198,ready:false,speed:.65};
 window.TREX_SUP=SUP;
 var oldStrike=strike,oldUpdate=update,oldDraw=draw,oldHud=updateHud,oldReset=resetArcade;
-function reset(){SUP.active=false;SUP.actor=null;SUP.victim=null;SUP.age=0;SUP.landed=false;SUP.miss=false;SUP.voice=false;}
+function reset(){SUP.active=false;SUP.actor=null;SUP.victim=null;SUP.age=0;SUP.landed=false;SUP.miss=false;}
 resetArcade=function(){reset();return oldReset.apply(this,arguments);};
 function canStart(a,type){
  return type==='special'&&a&&a.id===1&&(practice||a.meter>=100)&&a.cool<=0&&a.attack<=0&&a.stun<=0&&a.blockstun<=0&&!a.blocking&&a.escaping<=0&&a.hp>0&&a.y===0&&!a.legGone&&!ending&&!SUP.active&&introFrames<=0&&!(typeof ONLINE!=='undefined'&&ONLINE.active);
 }
 strike=function(a,b,type,power,low){
  if(!canStart(a,type))return oldStrike.apply(this,arguments);
- SUP.active=true;SUP.age=0;SUP.actor=a;SUP.victim=b||null;SUP.landed=false;SUP.blocked=false;SUP.miss=false;SUP.voice=false;
+ SUP.active=true;SUP.age=0;SUP.actor=a;SUP.victim=b||null;SUP.landed=false;SUP.blocked=false;SUP.miss=false;
  a.meter=0;a.attackType='trex-super';a.attackLength=SUP.length;a.attack=SUP.length;a.ex=true;a.finisher=false;a.cool=practice?SUP.length:390;a.crouching=false;a.blocking=false;a.moving=false;a.hit=false;a.connected=false;a.shots=0;a.cast=++castSerial;a.vy=0;a.y=0;a.invuln=SUP.length+8;
  if(b){b.blocking=b.blocking&&b.y===0; b.moving=false;}
  clearActionBuffer();cancelCharges();if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
  announcement='¡SUPREMO: TABLAZO DE T-REX!';announceTime=0;exFlash=20;
- sfx('ready');haptic(45);oldHud();
+ // El súper es completamente silencioso: ni grito ni efectos propios.
+ haptic(45);oldHud();
  return true;
 };
 function stroke(c,color,width){c.strokeStyle=color;c.lineWidth=width;c.lineJoin='round';c.stroke();}
@@ -87,9 +88,9 @@ fetch('assets/trex-sup-super-v1.b64?v=1').then(function(r){if(!r.ok)throw Error(
 function hitNow(){
  if(SUP.landed)return;SUP.landed=true;
  var a=SUP.actor,b=SUP.victim;
- if(!b){SUP.miss=true;sfx('release');return;}
+ if(!b){SUP.miss=true;return;}
  var dist=Math.abs(a.x-b.x),canReach=dist<=490&&b.invuln<=0;
- if(!canReach){SUP.miss=true;sfx('release');return;}
+ if(!canReach){SUP.miss=true;return;}
  SUP.blocked=!!(b.blocking&&guardCovers(b,'mid'));
  var damage=MAX_HP*(SUP.blocked?.045:.38);
  b.hp=clamp(b.hp-damage,0,MAX_HP);
@@ -101,15 +102,13 @@ function hitNow(){
  a.connected=!SUP.blocked;a.hit=true;
  effects.push({x:b.x,y:235,t:30,burst:true,kind:-3,blocked:SUP.blocked});
  effects.push({x:b.x,y:150,t:48,text:SUP.blocked?'¡BLOQUEADO!':'¡TABLAZO!',color:SUP.blocked?'#b7e9ff':'#ffec56'});
- shake=Math.max(shake,21);sfx(SUP.blocked?'guard':'hit',{intensity:1.8});haptic(SUP.blocked?32:90);
+ shake=Math.max(shake,21);haptic(SUP.blocked?32:90);
  if(b===enemy&&!SUP.blocked&&!practice)score+=Math.round(damage*18);
 }
 function tick(dt){
- if(!SUP.active)return;SUP.age=Math.min(SUP.length,SUP.age+dt);
+ if(!SUP.active)return;SUP.age=Math.min(SUP.length,SUP.age+dt*SUP.speed);
  var t=SUP.age,a=SUP.actor;
  a.attack=Math.max(0,SUP.length-t);
- if(t>=43&&t<125&&Math.floor(t/13)!==Math.floor((t-dt)/13))sfx('step',{intensity:.35});
- if(t>=134&&!SUP.voice){SUP.voice=true;audio.playVoice(1);sfx('special',{id:1});}
  if(t>=169&&!SUP.landed)hitNow();
  if(t>=SUP.length){var dead=SUP.victim&&SUP.victim.hp<=0,win=SUP.actor===player;reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;if(dead)finish(win);}
  oldHud();
