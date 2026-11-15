@@ -16,7 +16,7 @@ const SPECIAL_ADVANTAGES=[
  {rawDamage:30,push:110,guardStun:20,label:'La mascarilla empuja lejos y ayuda a salir del rincón.'}
 ];
 const FINISHER_ADVANTAGES=[
- [{damage:1.7,reverse:240,label:'Invierte izquierda y derecha durante 4 s si conecta sin bloqueo.'},{damage:1.9,push:95,label:'El pequeño pintor cruza la arena y empuja al rival al impactar.'}],
+ [{damage:1.7,reverse:480,label:'Invierte izquierda y derecha durante 8 s si conecta sin bloqueo.'},{damage:1.9,push:95,label:'El pequeño pintor cruza la arena y empuja al rival al impactar.'}],
  [{damage:0,selfBuff:'diveMask',label:'Reduce el daño recibido un 25 % durante 5 s; no se acumula.'},{damage:2.4,breakGuard:true,stun:84,label:'Mordida que rompe la guardia.'}],
  [{damage:1.85,launch:7,label:'Lanza al rival hacia arriba.'},{damage:1.9,guardStun:24,chip:.16,label:'La llave permite presionar a distancia.'}],
  [{damage:2.15,push:95,label:'La mochila empuja al rival y abre espacio.'},{damage:2.15,breakGuard:true,label:'El golpe de portátil rompe la guardia.'}],
