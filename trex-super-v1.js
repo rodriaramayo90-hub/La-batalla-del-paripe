@@ -145,7 +145,27 @@ function cinematic(){
  ctx.save();ctx.translate(bx+wiggle,464);ctx.scale(cam,cam);
  if(SUP.art&&SUP.art.complete&&SUP.art.naturalWidth>0){
   var sheet=SUP.art,cw=sheet.naturalWidth/4,ch=sheet.naturalHeight/3;
-  ctx.drawImage(sheet,idx%4*cw,Math.floor(idx/4)*ch,cw,ch,-200,-355,400,400);
+  // Frame 9-11: los originales se superponen en las celdas de 300x300.
+  // Recortar la grilla sin corregirla mezclaba una pierna del fotograma siguiente
+  // y amputaba la pierna trasera del propio T-Rex durante el golpe.
+  if(idx>=9){
+   var sx=cw/300,sy=ch/300,originX=idx%4*300,originY=Math.floor(idx/4)*300;
+   function piece(x,y,w,h){
+    ctx.drawImage(sheet,x*sx,y*sy,w*sx,h*sy,
+      -200+(x-originX)*400/300,-355+(y-originY)*400/300,w*400/300,h*400/300);
+   }
+   if(idx===9){
+    piece(300,600,260,223); // Preparación: sin el cuerpo del siguiente fotograma
+    piece(300,823,230,77);  // Piernas propias, sin la pierna extra a la derecha
+   }else if(idx===10){
+    piece(600,600,300,223); // Golpe: torso, tabla y estela
+    piece(600,823,255,77);  // Su pierna delantera, sin la del siguiente fotograma
+    piece(540,735,60,165);  // Recuperar su pierna trasera fuera de la celda
+   }else{
+    piece(900,600,300,300); // Remate
+    piece(850,815,50,85);   // Recuperar pierna trasera que quedó en celda previa
+   }
+  }else ctx.drawImage(sheet,idx%4*cw,Math.floor(idx/4)*ch,cw,ch,-200,-355,400,400);
  }else ctx.drawImage(SUP.frames[idx],-210,-374);
  ctx.restore();
  if(t>=145&&t<190){ctx.save();ctx.globalAlpha=t<169?.5:Math.max(0,(188-t)/19);ctx.strokeStyle='#fff7b1';ctx.lineWidth=15;for(var a=0;a<5;a++){ctx.beginPath();ctx.arc(420,260,120+a*20,-1.15,.52);ctx.stroke()}ctx.restore();}
