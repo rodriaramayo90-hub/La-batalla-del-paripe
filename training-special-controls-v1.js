@@ -105,7 +105,7 @@ humanInput=function(slot,key,pressed,source){
  if(LOCAL.active&&mode==='game'&&key==='special'&&pressed
     &&!LOCAL.paused&&!PAD.soloPause&&!ending&&introFrames<=0){
   const actor=slot===0?player:enemy,opponent=slot===0?enemy:player;
-  const match=typeof source==='string'&&/^pad-(\\d+)-special$/.exec(source);
+  const match=typeof source==='string'&&/^pad-(\d+)-special$/.exec(source);
   const pad=match?navigator.getGamepads?.()[Number(match[1])]:null;
   const r2=!!(pad?.buttons?.[7]&&(pad.buttons[7].pressed||pad.buttons[7].value>.5));
   if(r2&&actor&&supported(actor.id)){
