@@ -102,6 +102,18 @@ window.addEventListener('keydown',event=>{
 },true);
 const originalHumanInput=humanInput;
 humanInput=function(slot,key,pressed,source){
+ // VS local: ejecutar el súper directamente para ambos jugadores cuando EX
+ // esté al 100 %. No encolar un especial normal que pueda gastar la barra.
+ if(LOCAL.active&&mode==='game'&&key==='special'&&pressed
+    &&!LOCAL.paused&&!PAD.soloPause&&!ending&&introFrames<=0){
+  const actor=slot===0?player:enemy,opponent=slot===0?enemy:player;
+  if(actor&&supported(actor.id)&&actor.meter>=100){
+   if(superNotReady(actor))return;
+   const success=strike(actor,opponent,'special',false,false);
+   if(success){haptic(24);refreshPracticeUI();}
+   return;
+  }
+ }
  if(inTraining()&&slot===0&&key==='special'&&pressed&&typeof source==='string'){
   const match=/^pad-(\d+)-special$/.exec(source);
   if(match){
