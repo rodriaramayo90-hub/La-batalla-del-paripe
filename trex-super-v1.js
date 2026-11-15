@@ -116,7 +116,9 @@ function tick(dt){
 update=function(dt){if(SUP.active){tick(dt);return;}return oldUpdate.apply(this,arguments);};
 function visualIndex(t){
  if(t<15)return 0;if(t<32)return 1;if(t<44)return 2;
- if(t<124)return 3+Math.min(4,Math.floor((t-44)/16));
+ // El primer sprite de inflado original (3) desplaza la pierna de apoyo.
+ // Repetir un bombeo con pies estables conserva el ritmo sin esa pierna suelta.
+ if(t<124)return [4,5,4,6,7][Math.min(4,Math.floor((t-44)/16))];
  if(t<138)return 8;if(t<151)return 9;if(t<179)return 10;return 11;
 }
 function drawText(c,line,size,y,color){
@@ -165,6 +167,12 @@ function cinematic(){
     piece(900,600,300,300); // Remate
     piece(850,815,50,85);   // Recuperar pierna trasera que quedó en celda previa
    }
+  }else if(idx===2){
+   // Pie izquierdo: la hoja original lo cortaba en x=600.
+   // Recuperar el margen de la celda anterior sin deformar al personaje.
+   var footMargin=20*cw/300;
+   ctx.drawImage(sheet,2*cw-footMargin,0,cw+footMargin,ch,
+     -200-20*400/300,-355,400+20*400/300,400);
   }else ctx.drawImage(sheet,idx%4*cw,Math.floor(idx/4)*ch,cw,ch,-200,-355,400,400);
  }else ctx.drawImage(SUP.frames[idx],-210,-374);
  ctx.restore();
