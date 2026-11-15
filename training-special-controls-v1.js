@@ -41,9 +41,9 @@ css.textContent=[
 document.head.appendChild(css);
 const originalStrike=strike,originalHud=updateHud,originalUpdate=update;
 let requestingSuper=false;
-const supported=id=>id===1||id===6;
+const supported=id=>id===0||id===1||id===6;
 const inTraining=()=>mode==='game'&&practice&&!LOCAL.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active);
-const cinematicActive=()=>!!(window.TREX_SUP?.active||window.DRAPIE_SUPER?.active);
+const cinematicActive=()=>!!(window.TREX_SUP?.active||window.DRAPIE_SUPER?.active||window.ALCA_SUPER?.active);
 const isReady=()=>inTraining()&&player&&supported(player.id)&&!ending&&!introFrames
   &&!cinematicActive()&&player.hp>0&&player.attack<=0&&player.cool<=0
   &&player.stun<=0&&player.blockstun<=0&&!player.blocking&&!player.grabbed
@@ -92,11 +92,11 @@ humanInput=function(slot,key,pressed,source){
 function refreshPracticeUI(){
  const active=inTraining(),available=active&&supported(player?.id);
  superButton.disabled=!isReady();
- superButton.title=!available?'Súper EX: disponible con T-Rex y La Drapie':'Súper EX · U · PS4 R2 + ○';
+ superButton.title=!available?'Súper EX: disponible con Alcahueta, T-Rex y La Drapie':'Súper EX · U · PS4 R2 + ○';
  if(!active)return;
  const normal=document.querySelector('#game [data-key="special"]');
  if(normal){
-  normal.classList.remove('trex-super-ready','drapie-super-ready');
+  normal.classList.remove('trex-super-ready','drapie-super-ready','alca-super-ready');
   const small=normal.querySelector('small');
   if(small)small.textContent='ESPECIAL';
   normal.setAttribute('aria-label','Especial normal');
