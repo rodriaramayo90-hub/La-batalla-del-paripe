@@ -5,14 +5,10 @@
  if(typeof drawVictoryPose!=='function'||typeof drapieOutfitArt==='undefined'||typeof SpriteAtlas==='undefined')return;
  const originalVictoryPose=drawVictoryPose;
  const sourceFace=drapieOutfitArt[0]; // Actual normal-combat sprite, not a new generated face.
- drawVictoryPose=function(fighter,size){
-  originalVictoryPose.apply(this,arguments);
-  if(!fighter||fighter.id!==6||!sourceFace.complete||!sourceFace.naturalWidth)return;
-  const pose=[0,1,2,1][Math.floor((fighter.victoryAge||0)/18)%4],u=size/330;
-  // The celebration's face position remains nearly stationary as arms rise.
-  // Soft-edge mask includes hair, eyes, nose and mouth but excludes jersey/arms.
-  const pos=[[-5,-276],[1,-280],[-2,-278]][pose];
-  ctx.save();
+ const headCache=new Map();
+ function headTexture(pose,pos){
+  if(headCache.has(pose))return headCache.get(pose);
+  // Draw the mask once per win pose to avoid canvas allocations each frame.
   const mask=document.createElement('canvas');mask.width=120;mask.height=140;
   const m=mask.getContext('2d');
   const gradient=m.createRadialGradient(60,66,22,60,66,60);
@@ -27,7 +23,14 @@
   SpriteAtlas.draw(f,sourceFace,0,0,0,0,330);
   f.setTransform(1,0,0,1,0,0);
   f.globalCompositeOperation='destination-in';f.drawImage(mask,0,0);
-  ctx.drawImage(face,(pos[0]-60)*u,(pos[1]-70)*u,120*u,140*u);
-  ctx.restore();
+  headCache.set(pose,face);return face;
+ }
+ drawVictoryPose=function(fighter,size){
+  originalVictoryPose.apply(this,arguments);
+  if(!fighter||fighter.id!==6||!sourceFace.complete||!sourceFace.naturalWidth)return;
+  const pose=[0,1,2,1][Math.floor((fighter.victoryAge||0)/18)%4],u=size/330;
+  const pos=[[-5,-276],[1,-280],[-2,-278]][pose];
+  const face=headTexture(pose,pos);
+  ctx.save();ctx.drawImage(face,(pos[0]-60)*u,(pos[1]-70)*u,120*u,140*u);ctx.restore();
  };
 })();
