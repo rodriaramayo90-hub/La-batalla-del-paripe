@@ -44,12 +44,23 @@ let requestingSuper=false;
 const supported=id=>id===0||id===1||id===6;
 const inTraining=()=>mode==='game'&&practice&&!LOCAL.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active);
 const cinematicActive=()=>!!(window.TREX_SUP?.active||window.DRAPIE_SUPER?.active||window.ALCA_SUPER?.active);
+// En campaña, una barra EX llena reserva el próximo especial para la
+// cinemática. Si aún está en el aire o impedido, no gastarlo en uno normal.
+// La práctica mantiene dos botones separados y VS/online no se modifican.
+const chargedCampaignSuper=(a,type)=>type==='special'&&mode==='game'&&!practice
+  &&!LOCAL.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active)
+  &&a===player&&supported(a?.id)&&a.meter>=100;
+const superNotReady=a=>a.y!==0||a.vy!==0||a.attack>0||a.cool>0
+  ||a.stun>0||a.blockstun>0||a.blocking||a.grabbed||a.grabbing
+  ||a.escaping>0||a.legGone||a.hp<=0||introFrames>0||ending
+  ||cinematicActive()||!!(typeof projectileClash!=='undefined'&&projectileClash);
 const isReady=()=>inTraining()&&player&&supported(player.id)&&!ending&&!introFrames
   &&!cinematicActive()&&player.hp>0&&player.attack<=0&&player.cool<=0
   &&player.stun<=0&&player.blockstun<=0&&!player.blocking&&!player.grabbed
   &&!player.grabbing&&player.escaping<=0&&player.y===0&&!player.legGone
   &&!LOCAL.paused&&!PAD.soloPause;
 strike=function(a,b,type,power,low){
+ if(chargedCampaignSuper(a,type)&&superNotReady(a))return false;
  if(!(inTraining()&&type==='special'&&!requestingSuper))return originalStrike.apply(this,arguments);
  // El modo práctica, que antes daba súper automáticamente, se desactiva solo
  // durante esta llamada para ejecutar el especial original de cada personaje.
@@ -71,7 +82,18 @@ function fireSuper(){
  }finally{requestingSuper=false;}
 }
 window.practiceSuperEX=fireSuper;
-superButton.addEventListener('click',event=>{event.preventDefault();fireSuper();});
+// El toque se procesa en pointerdown, como los controles de ataque del móvil.
+// click queda como alternativa accesible (teclado/ratón), sin duplicar el toque.
+let lastSuperPointer=0;
+superButton.addEventListener('pointerdown',event=>{
+ if(event.pointerType==='mouse'&&event.button!==0)return;
+ event.preventDefault();event.stopPropagation();
+ lastSuperPointer=Date.now();fireSuper();
+},{passive:false});
+superButton.addEventListener('click',event=>{
+ event.preventDefault();event.stopPropagation();
+ if(Date.now()-lastSuperPointer>=800)fireSuper();
+});
 window.addEventListener('keydown',event=>{
  if(event.code!=='KeyU'||!inTraining()||event.repeat||event.altKey||event.ctrlKey||event.metaKey)return;
  const active=document.activeElement;
@@ -93,7 +115,16 @@ function refreshPracticeUI(){
  const active=inTraining(),available=active&&supported(player?.id);
  superButton.disabled=!isReady();
  superButton.title=!available?'Súper EX: disponible con Alcahueta, T-Rex y La Drapie':'Súper EX · U · PS4 R2 + ○';
- if(!active)return;
+ if(!active){
+  // En campaña el botón táctil principal pasa a ejecutar el SÚPER EX al
+  // alcanzar el 100 %; no debe anunciar un especial normal en ese estado.
+  if(chargedCampaignSuper(player,'special')&&player.cool<=0){
+   const normal=document.querySelector('#game [data-key="special"]');
+   const label=normal?.querySelector('small');if(label)label.textContent='SÚPER EX';
+   normal?.setAttribute('aria-label','Barra completa: ejecutar súper especial');
+  }
+  return;
+ }
  const normal=document.querySelector('#game [data-key="special"]');
  if(normal){
   normal.classList.remove('trex-super-ready','drapie-super-ready','alca-super-ready');
