@@ -77,6 +77,13 @@ function sprite(index){
 }
 function prepare(){if(SUP.ready)return;try{SUP.frames=Array.from({length:12},function(_,i){return sprite(i);});SUP.ready=true;}catch(e){console.warn('[T-Rex SUP] sprites unavailable',e);}}
 assetReady.then(prepare).catch(function(){});
+/* The illustrated 4x3 sprite sheet is stored as text to preserve its alpha over Pages.
+   Decode once; the composited game sprites remain a visual fallback. */
+fetch('assets/trex-sup-super-v1.b64?v=1').then(function(r){if(!r.ok)throw Error('SUP art '+r.status);return r.text();}).then(function(s){
+ var art=new Image();art.onload=function(){if(art.naturalWidth&&art.naturalHeight)SUP.art=art;};
+ art.onerror=function(){console.warn('[T-Rex SUP] illustrated sheet could not decode');};
+ art.src='data:image/webp;base64,'+s.replace(/\s/g,'');
+}).catch(function(err){console.warn('[T-Rex SUP] original sprite fallback',err);});
 function hitNow(){
  if(SUP.landed)return;SUP.landed=true;
  var a=SUP.actor,b=SUP.victim;
@@ -135,10 +142,13 @@ function cinematic(){
  }
  var idx=visualIndex(t),cam= t<15?1.16:t>=150&&t<190?1.09:.91;
  var wiggle=t>=169&&t<188?Math.sin(t*5)*Math.max(0,17-(t-169)):0;
- var bx=t<120?265:t<151?270:330+(t-151)*1.1;
- if(t>=169)bx=355;
+ var bx=t<120?265:t<151?270:310+Math.min(1,(t-151)/18)*225;
  ctx.save();ctx.translate(bx+wiggle,464);ctx.scale(cam,cam);
- ctx.drawImage(SUP.frames[idx],-210,-374);ctx.restore();
+ if(SUP.art&&SUP.art.complete&&SUP.art.naturalWidth>0){
+  var sheet=SUP.art,cw=sheet.naturalWidth/4,ch=sheet.naturalHeight/3;
+  ctx.drawImage(sheet,idx%4*cw,Math.floor(idx/4)*ch,cw,ch,-200,-355,400,400);
+ }else ctx.drawImage(SUP.frames[idx],-210,-374);
+ ctx.restore();
  if(t>=145&&t<190){ctx.save();ctx.globalAlpha=t<169?.5:Math.max(0,(188-t)/19);ctx.strokeStyle='#fff7b1';ctx.lineWidth=15;for(var a=0;a<5;a++){ctx.beginPath();ctx.arc(420,260,120+a*20,-1.15,.52);ctx.stroke()}ctx.restore();}
  if(t>=169&&t<184){ctx.fillStyle='rgba(255,255,255,'+(Math.max(0,(184-t)/15)*.70)+')';ctx.fillRect(0,0,960,540);}
  ctx.fillStyle='#060c22';ctx.fillRect(0,0,960,42);ctx.fillRect(0,496,960,44);
