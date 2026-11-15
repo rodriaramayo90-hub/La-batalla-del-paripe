@@ -164,7 +164,7 @@ updateHud=function(){priorHud.apply(this,arguments);if(!player)return;
 };
 // New sheet is lazy so failure to load art never blocks start of a fight.
 try{
- fetch('assets/drapie-super-atlas-v1.b64?v=1').then(r=>{if(!r.ok)throw new Error('Drapie sprites '+r.status);return r.text();}).then(s=>{
+ fetch('assets/drapie-super-identity-v2.b64?v=2').then(r=>{if(!r.ok)throw new Error('Drapie sprites '+r.status);return r.text();}).then(s=>{
   const im=new Image();im.onload=()=>{if(im.naturalWidth>=1000&&im.naturalHeight>=700)DS.art=im;};
   im.onerror=()=>console.warn('[Drapie EX] Sprites no disponibles; usando traje original');
   im.src='data:image/webp;base64,'+s.replace(/\s/g,'');
