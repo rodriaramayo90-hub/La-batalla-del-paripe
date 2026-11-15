@@ -1,5 +1,4 @@
-/* Arena de práctica: controles separados para especial normal y súper EX.
-   Sin cambios en campaña, VS local ni online. */
+/* Especial normal separado del súper EX: R2 + círculo en VS local y práctica. */
 (function(){
 'use strict';
 const area=document.querySelector('#game .control-group.attacks');
@@ -61,7 +60,7 @@ const isReady=()=>inTraining()&&player&&supported(player.id)&&!ending&&!introFra
   &&!LOCAL.paused&&!PAD.soloPause;
 strike=function(a,b,type,power,low){
  if(chargedCampaignSuper(a,type)&&superNotReady(a))return false;
- if(!(inTraining()&&type==='special'&&!requestingSuper))return originalStrike.apply(this,arguments);
+ if(!(type==='special'&&!requestingSuper&&(inTraining()||LOCAL.active&&supported(a?.id))))return originalStrike.apply(this,arguments);
  // El modo práctica, que antes daba súper automáticamente, se desactiva solo
  // durante esta llamada para ejecutar el especial original de cada personaje.
  const priorPractice=practice,priorMeter=a?.meter;
@@ -102,15 +101,19 @@ window.addEventListener('keydown',event=>{
 },true);
 const originalHumanInput=humanInput;
 humanInput=function(slot,key,pressed,source){
- // VS local: ejecutar el súper directamente para ambos jugadores cuando EX
- // esté al 100 %. No encolar un especial normal que pueda gastar la barra.
+ // VS local: círculo solo = especial normal; R2 + círculo = súper EX.
  if(LOCAL.active&&mode==='game'&&key==='special'&&pressed
     &&!LOCAL.paused&&!PAD.soloPause&&!ending&&introFrames<=0){
   const actor=slot===0?player:enemy,opponent=slot===0?enemy:player;
-  if(actor&&supported(actor.id)&&actor.meter>=100){
-   if(superNotReady(actor))return;
-   const success=strike(actor,opponent,'special',false,false);
-   if(success){haptic(24);refreshPracticeUI();}
+  const match=typeof source==='string'&&/^pad-(\\d+)-special$/.exec(source);
+  const pad=match?navigator.getGamepads?.()[Number(match[1])]:null;
+  const r2=!!(pad?.buttons?.[7]&&(pad.buttons[7].pressed||pad.buttons[7].value>.5));
+  if(r2&&actor&&supported(actor.id)){
+   if(actor.meter<100||superNotReady(actor))return;
+   requestingSuper=true;
+   try{const success=strike(actor,opponent,'special',false,false);
+    if(success){haptic(24);refreshPracticeUI();}
+   }finally{requestingSuper=false;}
    return;
   }
  }
@@ -128,6 +131,12 @@ function refreshPracticeUI(){
  superButton.disabled=!isReady();
  superButton.title=!available?'Súper EX: disponible con Alcahueta, T-Rex y La Drapie':'Súper EX · U · PS4 R2 + ○';
  if(!active){
+  if(LOCAL.active){
+   const normal=document.querySelector('#game [data-key="special"]');
+   const label=normal?.querySelector('small');if(label)label.textContent='ESPECIAL';
+   normal?.setAttribute('aria-label','Especial normal: círculo. Súper EX: R2 más círculo');
+   return;
+  }
   // En campaña el botón táctil principal pasa a ejecutar el SÚPER EX al
   // alcanzar el 100 %; no debe anunciar un especial normal en ese estado.
   if(chargedCampaignSuper(player,'special')&&player.cool<=0){
