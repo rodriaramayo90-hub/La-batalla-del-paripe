@@ -73,8 +73,8 @@ fetch('assets/berga-bocinazo-sprites-v1.b64?v=1')
 // rage animation from the first full windshield and mirrored Berga poses.
 const bergaFrames={
  board:[[1050,48,145,122],[1331,48,124,122],[1555,48,162,122]],
- drive:[[31,416,311,139],[380,418,307,137],[725,420,305,134],[1101,420,274,133],[1419,420,297,133]],
- impact:[[17,601,289,124],[338,601,222,124],[659,601,164,124],[1050,601,282,124],[1354,601,363,124]]
+ drive:[[31,427,311,127],[380,427,307,128],[725,427,305,127],[1101,427,274,126],[1419,427,297,126]],
+ impact:[[17,625,278,101],[338,625,208,101],[659,625,140,101],[1095,625,238,101],[1354,625,363,101]]
 };
 let rageFramesCache=null;
 function correctedRageFrames(){
@@ -126,7 +126,7 @@ function illustratedScene(t){
   const start=phase==='board'?0:phase==='drive'?235:270;
   const frames=bergaFrames[phase];
   const step=Math.min(frames.length-1,Math.floor((t-start)/period*frames.length));
-  const r=frames[step],scale=Math.min(840/r[2],370/r[3]);
+  const r=frames[step],scale=phase==='board'?3.4:phase==='drive'?2.7:2.56;
   const w=r[2]*scale,h=r[3]*scale;
   ctx.drawImage(bergaSheet,r[0],r[1],r[2],r[3],(960-w)/2,(540-h)/2,w,h);
  }
