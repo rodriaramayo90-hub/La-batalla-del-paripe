@@ -1,13 +1,13 @@
 /* Dra. En Berga — BOCINAZO FEROZ. Cinematic car, Dr. Tostador drives while Berga crosses over to honk, road rage and run-over. */
 (function(){'use strict';
-const S={active:false,t:0,length:320,speed:.72,a:null,b:null,hit:false,horn:0,spoke:false,utterance:null};
+const S={active:false,t:0,length:320,speed:.72,a:null,b:null,hit:false,horn:0};
 window.BERGA_SUPER=S;
 const previousStrike=strike,previousUpdate=update,previousDraw=draw,previousHud=updateHud,previousReset=resetArcade;
-function reset(){S.active=false;S.t=0;S.a=null;S.b=null;S.hit=false;S.horn=0;S.spoke=false;S.utterance=null;}
+function reset(){S.active=false;S.t=0;S.a=null;S.b=null;S.hit=false;S.horn=0;}
 resetArcade=function(){reset();return previousReset.apply(this,arguments)};
 function allowed(a,type){return type==='special'&&a?.id===5&&a.hp>0&&a.y===0&&a.attack<=0&&a.cool<=0&&a.stun<=0&&a.blockstun<=0&&!a.blocking&&!a.grabbed&&!a.grabbing&&a.escaping<=0&&(practice||a.meter>=100)&&introFrames<=0&&!ending&&!window.TREX_SUP?.active&&!window.DRAPIE_SUPER?.active&&!window.ALCA_SUPER?.active&&!S.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active)}
 strike=function(a,b,type,power,low){if(!allowed(a,type))return previousStrike.apply(this,arguments);
- S.active=true;S.t=0;S.a=a;S.b=b||null;S.hit=false;S.horn=0;S.spoke=false;window.SUPER_DEFENSE?.start('berga',a,b);
+ S.active=true;S.t=0;S.a=a;S.b=b||null;S.hit=false;S.horn=0;window.SUPER_DEFENSE?.start('berga',a,b);
  a.meter=0;a.attackType='berga-super';a.attackLength=S.length;a.attack=S.length;a.ex=true;a.finisher=false;a.cool=practice?S.length:420;a.vy=0;a.y=0;a.blocking=false;a.crouching=false;a.moving=false;a.hit=false;a.connected=false;a.cast=++castSerial;a.shots=0;a.invuln=S.length+10;
  if(b)b.moving=false;clearActionBuffer();cancelCharges();if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
  announcement='¡BOCINAZO FEROZ!';announceTime=0;exFlash=20;haptic(55);previousHud();return true;
@@ -132,32 +132,151 @@ function illustratedScene(t){
  }
  ctx.restore();return true;
 }
-function speakBocinazo(){
- if(S.spoke)return;S.spoke=true;
- if(!soundEnabled||typeof SpeechSynthesisUtterance==='undefined'||!window.speechSynthesis)return;
- try{const voice=new SpeechSynthesisUtterance('¡Bocinazo!');
-  voice.lang='es-AR';voice.rate=1.18;voice.pitch=1.25;voice.volume=1;
-  S.utterance=voice;window.speechSynthesis.speak(voice);
- }catch(e){console.warn('[Bocinazo Feroz] Voz no disponible',e);}
+// The honk is a comic effect, NEVER synthesized dialogue.
+function comicHonk(t){
+ if(t<108||t>=235)return;
+ const step=Math.floor((t-108)/17);
+ const age=(t-108)%17/17;
+ const sound=step%2===0?'¡PIIIIIIP!':'¡MOOOOOC!';
+ const scale=(.74+Math.sin(Math.min(1,age*2)*Math.PI/2)*.36)*(step%2?1.04:1);
+ const x=490+Math.sin(step*2.1)*35,y=75+Math.sin(t*.20)*4;
+ ctx.save();ctx.translate(x,y);ctx.rotate((step%2?-.075:.075));ctx.scale(scale,scale);
+ const spikes=14;
+ ctx.beginPath();
+ for(let i=0;i<spikes*2;i++){
+  const theta=i*Math.PI/spikes-Math.PI/2,r=i%2?115:154;
+  if(i===0)ctx.moveTo(Math.cos(theta)*r,Math.sin(theta)*r*.36);
+  else ctx.lineTo(Math.cos(theta)*r,Math.sin(theta)*r*.36);
+ }
+ ctx.closePath();ctx.fillStyle=step%2?'#fd4760':'#ffce35';
+ ctx.strokeStyle='#191130';ctx.lineWidth=8;ctx.fill();ctx.stroke();
+ ctx.shadowColor='#ffdb67';ctx.shadowBlur=18;
+ ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='italic 1000 48px system-ui';
+ ctx.lineJoin='round';ctx.lineWidth=10;ctx.strokeStyle='#22152e';ctx.strokeText(sound,0,0);
+ ctx.fillStyle=step%2?'#fff6b5':'#fff';ctx.fillText(sound,0,0);ctx.restore();
 }
-function cinematic(){if(!S.active)return;const t=S.t;ctx.save();const spriteReady=illustratedScene(t);if(!spriteReady){background(t);
- let x=t<46?-300+(t/46)*515:t<235?340:t<285?215+((t-235)/50)*1120:1400;
- if(t>=235&&t<285){ctx.save();ctx.globalAlpha=.32;for(let i=0;i<8;i++){ctx.strokeStyle='#fff5b1';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,260+i*26);ctx.lineTo(960,260+i*26);ctx.stroke()}ctx.restore()}
- if(S.b){const m=atlasMap[S.b.id];ctx.save();ctx.translate(792,432);ctx.scale(-1,1);SpriteAtlas.draw(ctx,t>=271?actionAtlases[actionMap[S.b.id][0]]:atlases[m[0]],t>=271?actionMap[S.b.id][1]:m[1],t>=271?5:0,0,0,270);ctx.restore()}
- car(x,418,t);
- if(t>=94&&t<236){const k=Math.floor((t-94)/18);text(k%2?'¡MOOOOOC!':'¡PIIIIIIP!',480,103,51,'#fff083');text('¡BERGA SE CRUZA PARA TOCAR LA BOCINA!',480,155,25,'#ffb4be')}
- if(t>=235&&t<290)text('¡BOCINAZO FEROZ!',480,100,53,'#ffe16d');
- if(t>=275&&t<298){ctx.fillStyle='rgba(255,255,255,'+(298-t)/55+')';ctx.fillRect(0,0,960,540)}
- ctx.fillStyle='#111029';ctx.fillRect(0,0,960,43);ctx.fillRect(0,496,960,44);ctx.font='900 20px system-ui';ctx.textAlign='left';ctx.fillStyle='#ffe7ac';ctx.fillText('DRA. EN BERGA / SÚPER EX',27,28);ctx.textAlign='right';ctx.fillText('CON DR. TOSTADOR',932,28);
- if(t<93)text('¡TOSTADOR AL VOLANTE!',480,87,39,'#fff0b2');
- }if(t>=113&&t<235){
- // Readable even on mute: speech bubble precisely when Berga presses the horn.
- const flash=Math.floor((t-113)/16)%2===0;
- if(flash)text('¡BOCINAZO!',480,75,45,'#ffe479');
- else text('¡PIIIIIIP!',480,75,41,'#fff0b3');
-}window.SUPER_DEFENSE?.draw('berga',ctx,t);ctx.restore()}
+// Extract ONLY the red car silhouette from the illustrated driving frame.
+// The old 'impact' row contains a fixed stranger, so it must never be used.
+let mobileCarSprite=null;
+function getMobileCar(){
+ if(mobileCarSprite)return mobileCarSprite;
+ if(!bergaSheet.complete||!bergaSheet.naturalWidth)return null;
+ const canvas=document.createElement('canvas');canvas.width=311;canvas.height=127;
+ const c=canvas.getContext('2d');
+ c.save();c.beginPath();
+ const outline=[[76,127],[78,112],[82,96],[91,82],[104,72],[117,54],[143,43],[213,42],
+ [238,51],[258,68],[279,75],[291,89],[300,106],[300,119],[296,127]];
+ outline.forEach(([x,y],index)=>index?c.lineTo(x,y):c.moveTo(x,y));
+ c.closePath();c.clip();c.drawImage(bergaSheet,31,427,311,127,0,0,311,127);c.restore();
+ mobileCarSprite=canvas;return canvas;
+}
+function drawPracticeMannequin(x,y,t,hit,guard){
+ ctx.save();ctx.translate(x,y);
+ if(hit&&!guard){const p=Math.max(0,Math.min(1,(t-270)/43));ctx.translate(p*88,-118*Math.sin(Math.PI*p));ctx.rotate(-.65*Math.sin(Math.PI*p))}
+ if(guard)ctx.translate(0,-30);
+ ctx.lineJoin='round';ctx.strokeStyle='#9cd8ed';ctx.lineWidth=8;
+ ctx.fillStyle='#343d58';ctx.beginPath();ctx.roundRect(-39,-160,78,108,15);ctx.fill();ctx.stroke();
+ ctx.fillStyle='#b7c2d7';ctx.beginPath();ctx.arc(0,-195,32,0,Math.PI*2);ctx.fill();ctx.stroke();
+ ctx.strokeStyle='#bbc5d8';ctx.lineWidth=13;ctx.beginPath();
+ ctx.moveTo(-20,-50);ctx.lineTo(-24,0);ctx.moveTo(20,-50);ctx.lineTo(24,0);
+ ctx.moveTo(-37,-138);ctx.lineTo(-53,-72);ctx.moveTo(37,-138);ctx.lineTo(53,-72);ctx.stroke();
+ ctx.fillStyle='#ffde8e';ctx.font='900 15px system-ui';ctx.textAlign='center';ctx.fillText('PRÁCTICA',0,-104);
+ ctx.restore();
+}
+function drawActualRival(t,front){
+ const b=S.b,ground=463,perfect=window.SUPER_DEFENSE?.result('berga')==='perfect';
+ if(!b||!Number.isInteger(b.id)||!atlasMap[b.id]){
+  // Practice without a selected opponent: explicitly a dummy, not a fixed character.
+  drawPracticeMannequin(778,ground,t,t>=270,false);return;
+ }
+ const wasHit=t>=270&&!perfect;
+ const p=Math.max(0,Math.min(1,(t-270)/46));
+ let x=front?778+(wasHit?p*100:perfect?p*80:0):778;
+ let lift=wasHit?140*Math.sin(p*Math.PI):perfect&&t>=260?96*Math.sin(Math.min(1,(t-260)/43)*Math.PI):0;
+ const source=wasHit?actionAtlases[actionMap[b.id][0]]:atlases[atlasMap[b.id][0]];
+ const row=wasHit?actionMap[b.id][1]:atlasMap[b.id][1],pose=wasHit?5:0;
+ ctx.save();ctx.translate(x,ground-lift);ctx.scale(-1,1);
+ if(wasHit)ctx.rotate(.83*Math.sin(p*Math.PI));
+ if(perfect&&t>=259)ctx.translate(-20,0);
+ // These are the EXACT combat atlases and body proportions used in-game.
+ SpriteAtlas.draw(ctx,source,row,pose,0,0,300);
+ ctx.restore();
+}
+function collisionFlash(t){
+ const elapsed=t-270;if(elapsed<0||elapsed>25)return;
+ const opacity=Math.max(0,1-elapsed/25);
+ const perfect=window.SUPER_DEFENSE?.result('berga')==='perfect';
+ ctx.save();ctx.translate(758,329);ctx.globalAlpha=opacity;
+ ctx.strokeStyle=perfect?'#b1fff1':'#ffde70';ctx.lineWidth=6;
+ for(let i=0;i<14;i++){const theta=i*Math.PI/7,rad=20+elapsed*3;
+  ctx.beginPath();ctx.moveTo(Math.cos(theta)*rad,Math.sin(theta)*rad);
+  ctx.lineTo(Math.cos(theta)*(rad+75),Math.sin(theta)*(rad+75));ctx.stroke()}
+ ctx.restore();
+ if(!perfect&&elapsed<16){
+  ctx.save();ctx.translate(745,170);ctx.rotate(-.11);ctx.fillStyle='#ffe45a';
+  ctx.strokeStyle='#371439';ctx.lineWidth=7;
+  ctx.beginPath();for(let i=0;i<20;i++){let angle=i*Math.PI/10,r=i%2?55:92;
+   let x=Math.cos(angle)*r,y=Math.sin(angle)*r*.75;
+   if(!i)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.font='italic 1000 25px system-ui';ctx.textAlign='center';ctx.fillStyle='#431a3d';
+  ctx.fillText('¡PAM!',0,9);ctx.restore();
+ }
+}
+function integratedAtropello(t){
+ // The real stage remains visible through the game canvas, exactly as in
+ // gameplay; no independent photo with a hardcoded opponent is displayed.
+ ctx.clearRect(0,0,960,540);
+ ctx.fillStyle='rgba(14,7,41,.24)';ctx.fillRect(0,0,960,540);
+ ctx.fillStyle='rgba(14,6,31,.40)';ctx.fillRect(0,465,960,75);
+ for(let i=0;i<13;i++){
+  const shift=(t-235)*12+i*93;
+  ctx.strokeStyle='rgba(255,226,151,.18)';ctx.lineWidth=i%3?3:6;
+  ctx.beginPath();ctx.moveTo((shift%1200)-180,400+i*7);
+  ctx.lineTo((shift%1200)+140,320+i*4);ctx.stroke();
+ }
+ const carArt=getMobileCar();
+ const progress=Math.max(0,Math.min(1,(t-235)/35));
+ const x=t<270?-620+835*progress:215+Math.min(1,(t-270)/40)*1040;
+ const carWidth=622,carHeight=254,carY=463-carHeight;
+ const perfect=window.SUPER_DEFENSE?.result('berga')==='perfect';
+ // Victim starts in front of the approaching car; after impact, draw again
+ // above the moving vehicle so the game character visibly tumbles.
+ if(t<270||perfect)drawActualRival(t,false);
+ ctx.save();ctx.fillStyle='rgba(18,16,41,.30)';
+ ctx.beginPath();ctx.ellipse(x+395,468,210,13,0,0,Math.PI*2);ctx.fill();ctx.restore();
+ if(carArt){
+  ctx.save();ctx.translate(x,carY+Math.sin(t*.72)*2);
+  ctx.drawImage(carArt,0,0,carWidth,carHeight);ctx.restore();
+ }else{
+  // Startup fallback when illustrated asset is still loading.
+  car(x+370,450,t);
+ }
+ // Dust follows the wheels without carrying the baked-in opponent.
+ ctx.save();ctx.globalAlpha=.45;
+ for(let i=0;i<6;i++){const dx=x+130-i*32,dy=444-i%2*13;
+  ctx.fillStyle=i%2?'#e2b9d7':'#f5e7e0';ctx.beginPath();
+  ctx.arc(dx,dy,15+i%3*5+Math.sin(t*.3+i)*4,0,Math.PI*2);ctx.fill()}
+ ctx.restore();
+ if(t>=270&&!perfect)drawActualRival(t,true);
+ collisionFlash(t);
+ if(t>=235&&t<272){text('¡A FONDO!',480,88,39,'#ffdf7a')}
+ if(t>=280&&t<313&&!perfect){text('¡ATROPELLADO!',480,98,44,'#ffe284')}
+}
+function cinematic(){
+ if(!S.active)return;const t=S.t;ctx.save();
+ if(t>=235){integratedAtropello(t)}
+ else{
+  const spriteReady=illustratedScene(t);
+  if(!spriteReady){
+   background(t);car(t<46?-300+t/46*515:340,418,t);
+   if(t<93)text('¡TOSTADOR AL VOLANTE!',480,88,35,'#fff0b2');
+  }
+  comicHonk(t);
+ }
+ window.SUPER_DEFENSE?.draw('berga',ctx,t);ctx.restore();
+}
 function impact(){if(S.hit)return;S.hit=true;const a=S.a,b=S.b;if(!b||b.hp<=0)return;const factor=window.SUPER_DEFENSE?.multiplier('berga')??1;window.SUPER_DEFENSE?.notice('berga');if(factor===0)return;const damage=MAX_HP*.48*factor;b.hp=clamp(b.hp-damage,0,MAX_HP);b.x=clamp(b.x+(a.dir||1)*115,80,880);b.knockback=(a.dir||1)*9;b.stun=Math.max(b.stun||0,78);b.blockstun=0;b.blocking=false;b.parryWindow=0;b.hitRecoil=1;b.hitStrength=1.9;b.hitDirection=a.dir||1;b.hitHeight=1;b.attack=0;b.hit=true;b.meter=clamp(b.meter+12,0,100);a.hit=true;a.connected=true;effects.push({x:b.x,y:235,t:34,burst:true,kind:-3,blocked:false});effects.push({x:b.x,y:150,t:50,text:'¡ATROPELLADO!',color:'#ffe38d'});shake=Math.max(shake,25);hitstop=Math.max(hitstop,11);sfx('hit',{intensity:2});haptic(90);if(a===player&&!practice)score+=Math.round(damage*18)}
-function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=120)speakBocinazo();if(S.t>=98&&S.t<229&&Math.floor(S.t/20)>S.horn){S.horn=Math.floor(S.t/20);sfx('ready');haptic(20)}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
+function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=98&&S.t<229&&Math.floor(S.t/20)>S.horn){S.horn=Math.floor(S.t/20);sfx('ready');haptic(20)}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
 update=function(dt){if(S.active){tick(dt);return}return previousUpdate.apply(this,arguments)};
 draw=function(){previousDraw.apply(this,arguments);if(S.active)cinematic()};
 updateHud=function(){previousHud.apply(this,arguments);if(!player)return;const ready=player.id===5&&(practice||player.meter>=100)&&player.cool<=0&&!S.active;const btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('berga-super-ready',ready);if(ready){const label=btn.querySelector('small');if(label)label.textContent='SÚPER EX';btn.setAttribute('aria-label','Bocinazo feroz')}}if(ready&&$('cool'))$('cool').textContent='EX LLENO · ¡BOCINAZO FEROZ!'};
