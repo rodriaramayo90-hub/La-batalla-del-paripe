@@ -1,13 +1,13 @@
-/* Dra. En Berga — BOCINAZO FEROZ. Cinematic car, Dr. Tostador passenger, road rage and run-over. */
+/* Dra. En Berga — BOCINAZO FEROZ. Cinematic car, Dr. Tostador drives while Berga crosses over to honk, road rage and run-over. */
 (function(){'use strict';
-const S={active:false,t:0,length:320,speed:.72,a:null,b:null,hit:false,horn:0};
+const S={active:false,t:0,length:320,speed:.72,a:null,b:null,hit:false,horn:0,spoke:false,utterance:null};
 window.BERGA_SUPER=S;
 const previousStrike=strike,previousUpdate=update,previousDraw=draw,previousHud=updateHud,previousReset=resetArcade;
-function reset(){S.active=false;S.t=0;S.a=null;S.b=null;S.hit=false;S.horn=0;}
+function reset(){S.active=false;S.t=0;S.a=null;S.b=null;S.hit=false;S.horn=0;S.spoke=false;S.utterance=null;}
 resetArcade=function(){reset();return previousReset.apply(this,arguments)};
 function allowed(a,type){return type==='special'&&a?.id===5&&a.hp>0&&a.y===0&&a.attack<=0&&a.cool<=0&&a.stun<=0&&a.blockstun<=0&&!a.blocking&&!a.grabbed&&!a.grabbing&&a.escaping<=0&&(practice||a.meter>=100)&&introFrames<=0&&!ending&&!window.TREX_SUP?.active&&!window.DRAPIE_SUPER?.active&&!window.ALCA_SUPER?.active&&!S.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active)}
 strike=function(a,b,type,power,low){if(!allowed(a,type))return previousStrike.apply(this,arguments);
- S.active=true;S.t=0;S.a=a;S.b=b||null;S.hit=false;S.horn=0;window.SUPER_DEFENSE?.start('berga',a,b);
+ S.active=true;S.t=0;S.a=a;S.b=b||null;S.hit=false;S.horn=0;S.spoke=false;window.SUPER_DEFENSE?.start('berga',a,b);
  a.meter=0;a.attackType='berga-super';a.attackLength=S.length;a.attack=S.length;a.ex=true;a.finisher=false;a.cool=practice?S.length:420;a.vy=0;a.y=0;a.blocking=false;a.crouching=false;a.moving=false;a.hit=false;a.connected=false;a.cast=++castSerial;a.shots=0;a.invuln=S.length+10;
  if(b)b.moving=false;clearActionBuffer();cancelCharges();if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
  announcement='¡BOCINAZO FEROZ!';announceTime=0;exFlash=20;haptic(55);previousHud();return true;
@@ -68,25 +68,77 @@ fetch('assets/berga-bocinazo-sprites-v1.b64?v=1')
    bergaSheet.src='data:image/webp;base64,'+encoded;
  })
  .catch(err=>console.warn('[Bocinazo Feroz] Hoja de sprites no disponible; usando animación de reserva',err));
+// The illustrated source is a montage, not a perfectly separated atlas.
+// Several later cells contain the preceding vehicle. Compose a clean
+// rage animation from the first full windshield and mirrored Berga poses.
 const bergaFrames={
- board:[[946,34,255,142],[1205,34,250,142],[1458,34,259,142]],
- rage:[[13,213,328,164],[353,213,333,164],[695,213,335,164],[1042,213,332,164],[1384,213,333,164]],
- drive:[[13,393,338,164],[356,393,340,164],[702,393,338,164],[1044,393,339,164],[1387,393,331,164]],
- impact:[[12,576,310,155],[337,576,307,155],[658,576,315,155],[985,576,350,155],[1343,576,375,155]]
+ board:[[1050,48,145,122],[1331,48,124,122],[1555,48,162,122]],
+ drive:[[31,416,311,139],[380,418,307,137],[725,420,305,134],[1101,420,274,133],[1419,420,297,133]],
+ impact:[[17,601,289,124],[338,601,222,124],[659,601,164,124],[1050,601,282,124],[1354,601,363,124]]
 };
+let rageFramesCache=null;
+function correctedRageFrames(){
+ if(rageFramesCache)return rageFramesCache;
+ if(!bergaSheet.complete||!bergaSheet.naturalWidth)return null;
+ const origins=[13,360,704,1049,1393],frames=[];
+ for(let i=0;i<5;i++){
+  const canvas=document.createElement('canvas');canvas.width=328;canvas.height=164;
+  const c=canvas.getContext('2d');
+  // Stable Tostador steering wheel and a clean, single windshield.
+  c.drawImage(bergaSheet,13,213,328,164,0,0,328,164);
+  if(i>0){
+   // Flip ONLY the passenger and her outstretched arm; never flip the doctor
+   // or the entire car. Thus Berga turns LEFT toward the driver's horn.
+   const passenger=document.createElement('canvas');
+   passenger.width=166;passenger.height=164;
+   const pc=passenger.getContext('2d');
+   pc.translate(166,0);pc.scale(-1,1);
+   pc.drawImage(bergaSheet,origins[i]+162,213,166,164,0,0,166,164);
+   pc.setTransform(1,0,0,1,0,0);
+   // Soft silhouette avoids cutout edges and excludes adjacent car/doctor.
+   const mask=document.createElement('canvas');mask.width=166;mask.height=164;
+   const mc=mask.getContext('2d');
+   mc.filter='blur(3px)';mc.fillStyle='#fff';mc.beginPath();
+   const outline=[[8,152],[3,119],[16,96],[13,82],[22,57],[48,36],[117,39],[139,54],[147,67],[149,159]];
+   outline.forEach(([x,y],k)=>k?mc.lineTo(x,y):mc.moveTo(x,y));
+   mc.closePath();mc.fill();
+   pc.globalCompositeOperation='destination-in';pc.drawImage(mask,0,0);
+   pc.globalCompositeOperation='source-over';
+   c.drawImage(passenger,162,0);
+  }
+  frames.push(canvas);
+ }
+ rageFramesCache=frames;return frames;
+}
 function illustratedScene(t){
  if(!bergaSheet.complete||!bergaSheet.naturalWidth)return false;
- let frames,progress;
- if(t<94){frames=bergaFrames.board;progress=t/94}
- else if(t<235){frames=bergaFrames.rage;progress=(t-94)/141}
- else if(t<270){frames=bergaFrames.drive;progress=(t-235)/35}
- else {frames=bergaFrames.impact;progress=Math.min(1,(t-270)/50)}
- const i=Math.min(frames.length-1,Math.floor(progress*frames.length)),r=frames[i];
  ctx.save();ctx.fillStyle='#121027';ctx.fillRect(0,0,960,540);
- // Fit the illustrated frame without distorting the characters.
- const scale=Math.min(960/r[2],480/r[3]),w=r[2]*scale,h=r[3]*scale;
- ctx.drawImage(bergaSheet,...r,(960-w)/2,(540-h)/2,w,h);
+ if(t>=94&&t<235){
+  const frames=correctedRageFrames();
+  if(!frames){ctx.restore();return false;}
+  const step=Math.min(4,Math.floor((t-94)/141*5));
+  // Remove the original sheet's purple header and keep one entire car.
+  const w=836,h=390;
+  ctx.drawImage(frames[step],0,12,328,150,(960-w)/2,(540-h)/2,w,h);
+ }else{
+  const phase=t<94?'board':t<270?'drive':'impact';
+  const period=phase==='board'?94:phase==='drive'?35:50;
+  const start=phase==='board'?0:phase==='drive'?235:270;
+  const frames=bergaFrames[phase];
+  const step=Math.min(frames.length-1,Math.floor((t-start)/period*frames.length));
+  const r=frames[step],scale=Math.min(840/r[2],370/r[3]);
+  const w=r[2]*scale,h=r[3]*scale;
+  ctx.drawImage(bergaSheet,r[0],r[1],r[2],r[3],(960-w)/2,(540-h)/2,w,h);
+ }
  ctx.restore();return true;
+}
+function speakBocinazo(){
+ if(S.spoke)return;S.spoke=true;
+ if(!soundEnabled||typeof SpeechSynthesisUtterance==='undefined'||!window.speechSynthesis)return;
+ try{const voice=new SpeechSynthesisUtterance('¡Bocinazo!');
+  voice.lang='es-AR';voice.rate=1.18;voice.pitch=1.25;voice.volume=1;
+  S.utterance=voice;window.speechSynthesis.speak(voice);
+ }catch(e){console.warn('[Bocinazo Feroz] Voz no disponible',e);}
 }
 function cinematic(){if(!S.active)return;const t=S.t;ctx.save();const spriteReady=illustratedScene(t);if(!spriteReady){background(t);
  let x=t<46?-300+(t/46)*515:t<235?340:t<285?215+((t-235)/50)*1120:1400;
@@ -98,9 +150,14 @@ function cinematic(){if(!S.active)return;const t=S.t;ctx.save();const spriteRead
  if(t>=275&&t<298){ctx.fillStyle='rgba(255,255,255,'+(298-t)/55+')';ctx.fillRect(0,0,960,540)}
  ctx.fillStyle='#111029';ctx.fillRect(0,0,960,43);ctx.fillRect(0,496,960,44);ctx.font='900 20px system-ui';ctx.textAlign='left';ctx.fillStyle='#ffe7ac';ctx.fillText('DRA. EN BERGA / SÚPER EX',27,28);ctx.textAlign='right';ctx.fillText('CON DR. TOSTADOR',932,28);
  if(t<93)text('¡TOSTADOR AL VOLANTE!',480,87,39,'#fff0b2');
- }window.SUPER_DEFENSE?.draw('berga',ctx,t);ctx.restore()}
+ }if(t>=113&&t<235){
+ // Readable even on mute: speech bubble precisely when Berga presses the horn.
+ const flash=Math.floor((t-113)/16)%2===0;
+ if(flash)text('¡BOCINAZO!',480,75,45,'#ffe479');
+ else text('¡PIIIIIIP!',480,75,41,'#fff0b3');
+}window.SUPER_DEFENSE?.draw('berga',ctx,t);ctx.restore()}
 function impact(){if(S.hit)return;S.hit=true;const a=S.a,b=S.b;if(!b||b.hp<=0)return;const factor=window.SUPER_DEFENSE?.multiplier('berga')??1;window.SUPER_DEFENSE?.notice('berga');if(factor===0)return;const damage=MAX_HP*.48*factor;b.hp=clamp(b.hp-damage,0,MAX_HP);b.x=clamp(b.x+(a.dir||1)*115,80,880);b.knockback=(a.dir||1)*9;b.stun=Math.max(b.stun||0,78);b.blockstun=0;b.blocking=false;b.parryWindow=0;b.hitRecoil=1;b.hitStrength=1.9;b.hitDirection=a.dir||1;b.hitHeight=1;b.attack=0;b.hit=true;b.meter=clamp(b.meter+12,0,100);a.hit=true;a.connected=true;effects.push({x:b.x,y:235,t:34,burst:true,kind:-3,blocked:false});effects.push({x:b.x,y:150,t:50,text:'¡ATROPELLADO!',color:'#ffe38d'});shake=Math.max(shake,25);hitstop=Math.max(hitstop,11);sfx('hit',{intensity:2});haptic(90);if(a===player&&!practice)score+=Math.round(damage*18)}
-function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=98&&S.t<229&&Math.floor(S.t/20)>S.horn){S.horn=Math.floor(S.t/20);sfx('ready');haptic(20)}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
+function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=120)speakBocinazo();if(S.t>=98&&S.t<229&&Math.floor(S.t/20)>S.horn){S.horn=Math.floor(S.t/20);sfx('ready');haptic(20)}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
 update=function(dt){if(S.active){tick(dt);return}return previousUpdate.apply(this,arguments)};
 draw=function(){previousDraw.apply(this,arguments);if(S.active)cinematic()};
 updateHud=function(){previousHud.apply(this,arguments);if(!player)return;const ready=player.id===5&&(practice||player.meter>=100)&&player.cool<=0&&!S.active;const btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('berga-super-ready',ready);if(ready){const label=btn.querySelector('small');if(label)label.textContent='SÚPER EX';btn.setAttribute('aria-label','Bocinazo feroz')}}if(ready&&$('cool'))$('cool').textContent='EX LLENO · ¡BOCINAZO FEROZ!'};
