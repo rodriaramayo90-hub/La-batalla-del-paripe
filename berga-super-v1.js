@@ -55,7 +55,31 @@ function car(x,y,t){
  ctx.restore();
 }
 function background(t){if(illustration.street?.complete&&illustration.street.naturalWidth){ctx.drawImage(illustration.street,0,0,960,540)}else{ctx.fillStyle='#302b50';ctx.fillRect(0,0,960,540)}ctx.fillStyle='#ffe7a0';for(let i=0;i<7;i++)ctx.fillRect((i*190-t*3)%1100-120,476,100,8)}
-function cinematic(){if(!S.active)return;const t=S.t;ctx.save();background(t);
+// Illustrated sprite sheet exported from the approved Bocinazo Feroz artwork.
+// Frames are cropped by phase; if the image is missing, the previous vector animation remains playable.
+const bergaSheet=new Image();
+bergaSheet.src='assets/berga-bocinazo-sprites.webp?v=1';
+const bergaFrames={
+ board:[[946,34,255,142],[1205,34,250,142],[1458,34,259,142]],
+ rage:[[13,213,328,164],[353,213,333,164],[695,213,335,164],[1042,213,332,164],[1384,213,333,164]],
+ drive:[[13,393,338,164],[356,393,340,164],[702,393,338,164],[1044,393,339,164],[1387,393,331,164]],
+ impact:[[12,576,310,155],[337,576,307,155],[658,576,315,155],[985,576,350,155],[1343,576,375,155]]
+};
+function illustratedScene(t){
+ if(!bergaSheet.complete||!bergaSheet.naturalWidth)return false;
+ let frames,progress;
+ if(t<94){frames=bergaFrames.board;progress=t/94}
+ else if(t<235){frames=bergaFrames.rage;progress=(t-94)/141}
+ else if(t<270){frames=bergaFrames.drive;progress=(t-235)/35}
+ else {frames=bergaFrames.impact;progress=Math.min(1,(t-270)/50)}
+ const i=Math.min(frames.length-1,Math.floor(progress*frames.length)),r=frames[i];
+ ctx.save();ctx.fillStyle='#121027';ctx.fillRect(0,0,960,540);
+ // Fit the illustrated frame without distorting the characters.
+ const scale=Math.min(960/r[2],480/r[3]),w=r[2]*scale,h=r[3]*scale;
+ ctx.drawImage(bergaSheet,...r,(960-w)/2,(540-h)/2,w,h);
+ ctx.restore();return true;
+}
+function cinematic(){if(!S.active)return;const t=S.t;ctx.save();const spriteReady=illustratedScene(t);if(!spriteReady){background(t);
  let x=t<46?-300+(t/46)*515:t<235?340:t<285?215+((t-235)/50)*1120:1400;
  if(t>=235&&t<285){ctx.save();ctx.globalAlpha=.32;for(let i=0;i<8;i++){ctx.strokeStyle='#fff5b1';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,260+i*26);ctx.lineTo(960,260+i*26);ctx.stroke()}ctx.restore()}
  if(S.b){const m=atlasMap[S.b.id];ctx.save();ctx.translate(792,432);ctx.scale(-1,1);SpriteAtlas.draw(ctx,t>=271?actionAtlases[actionMap[S.b.id][0]]:atlases[m[0]],t>=271?actionMap[S.b.id][1]:m[1],t>=271?5:0,0,0,270);ctx.restore()}
@@ -65,7 +89,7 @@ function cinematic(){if(!S.active)return;const t=S.t;ctx.save();background(t);
  if(t>=275&&t<298){ctx.fillStyle='rgba(255,255,255,'+(298-t)/55+')';ctx.fillRect(0,0,960,540)}
  ctx.fillStyle='#111029';ctx.fillRect(0,0,960,43);ctx.fillRect(0,496,960,44);ctx.font='900 20px system-ui';ctx.textAlign='left';ctx.fillStyle='#ffe7ac';ctx.fillText('DRA. EN BERGA / SÚPER EX',27,28);ctx.textAlign='right';ctx.fillText('CON DR. TOSTADOR',932,28);
  if(t<93)text('¡TOSTADOR AL VOLANTE!',480,87,39,'#fff0b2');
- window.SUPER_DEFENSE?.draw('berga',ctx,t);ctx.restore()}
+ }window.SUPER_DEFENSE?.draw('berga',ctx,t);ctx.restore()}
 function impact(){if(S.hit)return;S.hit=true;const a=S.a,b=S.b;if(!b||b.hp<=0)return;const factor=window.SUPER_DEFENSE?.multiplier('berga')??1;window.SUPER_DEFENSE?.notice('berga');if(factor===0)return;const damage=MAX_HP*.48*factor;b.hp=clamp(b.hp-damage,0,MAX_HP);b.x=clamp(b.x+(a.dir||1)*115,80,880);b.knockback=(a.dir||1)*9;b.stun=Math.max(b.stun||0,78);b.blockstun=0;b.blocking=false;b.parryWindow=0;b.hitRecoil=1;b.hitStrength=1.9;b.hitDirection=a.dir||1;b.hitHeight=1;b.attack=0;b.hit=true;b.meter=clamp(b.meter+12,0,100);a.hit=true;a.connected=true;effects.push({x:b.x,y:235,t:34,burst:true,kind:-3,blocked:false});effects.push({x:b.x,y:150,t:50,text:'¡ATROPELLADO!',color:'#ffe38d'});shake=Math.max(shake,25);hitstop=Math.max(hitstop,11);sfx('hit',{intensity:2});haptic(90);if(a===player&&!practice)score+=Math.round(damage*18)}
 function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=98&&S.t<229&&Math.floor(S.t/20)>S.horn){S.horn=Math.floor(S.t/20);sfx('ready');haptic(20)}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
 update=function(dt){if(S.active){tick(dt);return}return previousUpdate.apply(this,arguments)};
