@@ -12,7 +12,7 @@ function canStart(a,type){
 }
 strike=function(a,b,type,power,low){
  if(!canStart(a,type))return oldStrike.apply(this,arguments);
- SUP.active=true;SUP.age=0;SUP.actor=a;SUP.victim=b||null;SUP.landed=false;SUP.blocked=false;SUP.miss=false;
+ SUP.active=true;SUP.age=0;SUP.actor=a;SUP.victim=b||null;window.SUPER_DEFENSE?.start('trex',a,b);SUP.landed=false;SUP.blocked=false;SUP.miss=false;
  a.meter=0;a.attackType='trex-super';a.attackLength=SUP.length;a.attack=SUP.length;a.ex=true;a.finisher=false;a.cool=practice?SUP.length:390;a.crouching=false;a.blocking=false;a.moving=false;a.hit=false;a.connected=false;a.shots=0;a.cast=++castSerial;a.vy=0;a.y=0;a.invuln=SUP.length+8;
  if(b){b.blocking=b.blocking&&b.y===0; b.moving=false;}
  clearActionBuffer();cancelCharges();if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
@@ -91,8 +91,8 @@ function hitNow(){
  if(!b){SUP.miss=true;return;}
  var dist=Math.abs(a.x-b.x),canReach=dist<=490&&b.invuln<=0;
  if(!canReach){SUP.miss=true;return;}
- SUP.blocked=!!(b.blocking&&guardCovers(b,'mid'));
- var damage=MAX_HP*(SUP.blocked?.045:.38);
+ SUP.blocked=window.SUPER_DEFENSE?.multiplier('trex')===0;window.SUPER_DEFENSE?.notice('trex');
+ var damage=MAX_HP*.38*(window.SUPER_DEFENSE?.multiplier('trex')??1);
  b.hp=clamp(b.hp-damage,0,MAX_HP);
  b.meter=clamp(b.meter+(SUP.blocked?9:18),0,100);
  b.x=clamp(b.x+a.dir*(SUP.blocked?25:100),80,880);
@@ -109,8 +109,8 @@ function tick(dt){
  if(!SUP.active)return;SUP.age=Math.min(SUP.length,SUP.age+dt*SUP.speed);
  var t=SUP.age,a=SUP.actor;
  a.attack=Math.max(0,SUP.length-t);
- if(t>=169&&!SUP.landed)hitNow();
- if(t>=SUP.length){var dead=SUP.victim&&SUP.victim.hp<=0,win=SUP.actor===player;reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;if(dead)finish(win);}
+ window.SUPER_DEFENSE?.tick('trex',t);if(t>=169&&!SUP.landed)hitNow();
+ if(t>=SUP.length){window.SUPER_DEFENSE?.end('trex');var dead=SUP.victim&&SUP.victim.hp<=0,win=SUP.actor===player;reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;if(dead)finish(win);}
  oldHud();
 }
 update=function(dt){if(SUP.active){tick(dt);return;}return oldUpdate.apply(this,arguments);};
@@ -190,7 +190,7 @@ function cinematic(){
  var caption=t<22?'¡SE VIENE UNA MUY GORDA!':t<44?'SACANDO LA TABLA...':t<124?'¡A INFLAR, WACHO!':t<149?'¡15 PSI DE BRONCA!':t<169?'¡TABLAZO SUPREMO!':SUP.miss?'¡NO LE DIO!':SUP.blocked?'¡LO BLOQUEÓ!':'¡PLOOOF!';
  drawText(ctx,caption,t<149?38:47,83,'#fff0a0');
  if(t>=44&&t<124){var air=(t-44)/80;round(ctx,380,438,260,12,6,'#0e2545','#d9ffff');round(ctx,382,440,256*air,8,4,'#20f6c4');ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.font='900 17px system-ui';ctx.fillText(Math.floor(air*15)+' PSI',510,425);}
- ctx.restore();
+ window.SUPER_DEFENSE?.draw('trex',ctx,t);ctx.restore();
 }
 draw=function(){oldDraw.apply(this,arguments);if(SUP.active)cinematic();};
 updateHud=function(){oldHud.apply(this,arguments);if(!player)return;var ready=player.id===1&&(practice||player.meter>=100)&&player.cool<=0&&!SUP.active;
