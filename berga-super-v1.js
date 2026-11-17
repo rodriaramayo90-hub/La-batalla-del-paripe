@@ -164,8 +164,9 @@ function getMobileCar(){
  const canvas=document.createElement('canvas');canvas.width=311;canvas.height=127;
  const c=canvas.getContext('2d');
  c.save();c.beginPath();
- const outline=[[76,127],[78,112],[82,96],[91,82],[104,72],[117,54],[143,43],[213,42],
- [238,51],[258,68],[279,75],[291,89],[300,106],[300,119],[296,127]];
+ const outline=[[76,127],[78,112],[80,98],[85,84],[99,77],[108,74],
+ [117,57],[130,51],[142,47],[203,46],[214,47],[228,54],
+ [246,73],[260,78],[279,84],[289,97],[294,107],[294,117],[289,126]];
  outline.forEach(([x,y],index)=>index?c.lineTo(x,y):c.moveTo(x,y));
  c.closePath();c.clip();c.drawImage(bergaSheet,31,427,311,127,0,0,311,127);c.restore();
  mobileCarSprite=canvas;return canvas;
