@@ -24,7 +24,7 @@ function canStart(a,type){
 }
 strike=function(a,b,type,power,low){
  if(!canStart(a,type))return oldStrike.apply(this,arguments);
- MI.active=true;MI.age=0;MI.actor=a;MI.victim=b||null;MI.hitEvents.clear();MI.blocked=!!(b&&b.blocking&&b.y===0);MI.said=false;
+ MI.active=true;MI.age=0;MI.actor=a;MI.victim=b||null;window.SUPER_DEFENSE?.start('alca',a,b);MI.hitEvents.clear();MI.blocked=!!(b&&b.blocking&&b.y===0);MI.said=false;
  a.meter=0;a.attackType='alcahueta-super';a.attackLength=MI.length;a.attack=MI.length;
  a.ex=true;a.finisher=false;a.cool=practice?MI.length:420;
  a.vy=0;a.y=0;a.moving=false;a.crouching=false;a.blocking=false;a.hit=false;a.connected=false;
@@ -138,12 +138,12 @@ function cinematic(){
  const title=t<38?'¡MI DESTINO!':t<95?'¡QUE VENGAN MIS DOS SOLDADOS!':t<261?'¡PEGUEN EN MI NOMBRE!':t<304?'¡GOLPE FINAL!':'¡MISIÓN CUMPLIDA!';
  textLine(title,480,84,t<100?35:38,'#fff0a2');
  if(t>=47){textLine('ZORRINO',pos.z,433,17,'#e9f8ff');textLine('KIPA DE PIEL',pos.k,437,16,'#fff0af');}
- ctx.restore();
+ window.SUPER_DEFENSE?.draw('alca',ctx,t);ctx.restore();
 }
 function hit(n){
  if(MI.hitEvents.has(n))return;MI.hitEvents.add(n);
  const a=MI.actor,b=MI.victim;if(!b||b.hp<=0)return;
- const guarded=MI.blocked,damage=MAX_HP*fractions[n]*(guarded?.35:1);
+ const guarded=false,damage=MAX_HP*(n===3?.48:0)*(window.SUPER_DEFENSE?.multiplier('alca')??1);if(n===3)window.SUPER_DEFENSE?.notice('alca');if(damage===0)return;
  b.hp=clamp(b.hp-damage,0,MAX_HP);b.stun=Math.max(b.stun||0,n===3?83:38);
  b.blockstun=guarded?37:0;b.blocking=guarded;b.guardHit=guarded?19:0;
  b.hit=true;b.hitRecoil=guarded?0:1;b.hitStrength=n===3?1.8:1.1;
@@ -161,11 +161,11 @@ function hit(n){
 function tick(dt){
  if(!MI.active)return;
  const old=MI.age;MI.age=Math.min(MI.length,MI.age+dt*MI.speed);
- const a=MI.actor;a.attack=Math.max(0,MI.length-MI.age);
+ const a=MI.actor;a.attack=Math.max(0,MI.length-MI.age);window.SUPER_DEFENSE?.tick('alca',MI.age);
  if(old<30&&MI.age>=30)speak();
  for(let i=0;i<phases.length;i++)if(MI.age>=phases[i])hit(i);
  if(MI.age>=MI.length){const b=MI.victim,dead=!!(b&&b.hp<=0),won=a===player;
-  reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;
+  window.SUPER_DEFENSE?.end('alca');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;
   clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];
   if(dead)finish(won);
  }
