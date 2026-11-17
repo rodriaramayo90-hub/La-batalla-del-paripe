@@ -58,7 +58,16 @@ function background(t){if(illustration.street?.complete&&illustration.street.nat
 // Illustrated sprite sheet exported from the approved Bocinazo Feroz artwork.
 // Frames are cropped by phase; if the image is missing, the previous vector animation remains playable.
 const bergaSheet=new Image();
-bergaSheet.src='assets/berga-bocinazo-sprites.webp?v=1';
+// Las imágenes se suben como .b64 para preservar el WebP sin perder ningún píxel
+// y ser compatibles con GitHub Pages y la conexión directa de GitHub.
+fetch('assets/berga-bocinazo-sprites-v1.b64?v=1')
+ .then(r=>{if(!r.ok)throw new Error('Sprites Bocinazo: HTTP '+r.status);return r.text()})
+ .then(data=>{
+   const encoded=data.replace(/\s/g,'');
+   if(!encoded.startsWith('UklGR'))throw new Error('Hoja de sprites WebP inválida');
+   bergaSheet.src='data:image/webp;base64,'+encoded;
+ })
+ .catch(err=>console.warn('[Bocinazo Feroz] Hoja de sprites no disponible; usando animación de reserva',err));
 const bergaFrames={
  board:[[946,34,255,142],[1205,34,250,142],[1458,34,259,142]],
  rage:[[13,213,328,164],[353,213,333,164],[695,213,335,164],[1042,213,332,164],[1384,213,333,164]],
