@@ -29,7 +29,7 @@ function canStart(a,type){
 }
 strike=function(a,b,type,power,low){
  if(!canStart(a,type))return priorStrike.apply(this,arguments);
- DS.active=true;DS.actor=a;DS.victim=b||null;DS.t=0;DS.hit=false;DS.stunned=false;DS.spoke=false;DS.finished=false;
+ DS.active=true;DS.actor=a;DS.victim=b||null;window.SUPER_DEFENSE?.start('drapie',a,b);DS.t=0;DS.hit=false;DS.stunned=false;DS.spoke=false;DS.finished=false;
  a.meter=0;a.attackType='drapie-super';a.attackLength=DS.length;a.attack=DS.length;a.finisher=false;a.ex=true;a.cool=practice?DS.length:390;
  a.hit=false;a.connected=false;a.crouching=false;a.blocking=false;a.moving=false;a.shots=0;a.vy=0;a.y=0;a.cast=++castSerial;a.invuln=DS.length+12;
  if(b)b.moving=false;
@@ -126,12 +126,12 @@ function cinematic(){
  drawHeadline(title,480,88,880,t<280?38:48,'#ffe66d');
  ctx.fillStyle='#f5e9ff';ctx.textAlign='left';ctx.font='bold 18px system-ui';
  ctx.fillText(t<62?'Sacando el celular…':t<222?'X · Instagram · TikTok · MÁS Y MÁS PUBLICACIONES':t<288?'¡El rival no puede reaccionar!':'¡IMPACTO DEFINITIVO!',30,525);
- ctx.restore();
+ window.SUPER_DEFENSE?.draw('drapie',ctx,t);ctx.restore();
 }
 function dealDamage(){
  if(DS.hit)return;DS.hit=true;
  const a=DS.actor,b=DS.victim;if(!b)return;
- const damage=MAX_HP*.48;
+ const damage=MAX_HP*.48*(window.SUPER_DEFENSE?.multiplier('drapie')??1);window.SUPER_DEFENSE?.notice('drapie');if(damage===0)return;
  b.hp=clamp(b.hp-damage,0,MAX_HP);b.x=clamp(b.x+(a.dir||1)*114,80,880);
  b.knockback=(a.dir||1)*9;b.stun=Math.max(b.stun||0,72);b.blockstun=0;b.blocking=false;b.parryWindow=0;b.guardMix=0;b.hitRecoil=1;b.hitStrength=1.85;b.hitHeight=1;b.hitDirection=a.dir||1;b.attack=0;b.hit=true;b.invuln=Math.max(b.invuln||0,27);
  b.meter=clamp(b.meter+12,0,100);a.hit=true;a.connected=true;
@@ -144,12 +144,12 @@ function tick(dt){
  if(!DS.active)return;
  DS.t=Math.min(DS.length,DS.t+dt*DS.speed);
  const a=DS.actor;a.attack=Math.max(0,DS.length-DS.t);
- if(DS.t>=56)speak();
+ window.SUPER_DEFENSE?.tick('drapie',DS.t);if(DS.t>=56)speak();
  if(DS.t>=210)DS.stunned=true;
  if(DS.t>=288&&!DS.hit){muteOurVoice();dealDamage();}
  if(DS.t>=DS.length){
   const b=DS.victim;const dead=!!b&&b.hp<=0;const win=a===player;
-  reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;
+  window.SUPER_DEFENSE?.end('drapie');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;
   clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];
   if(dead)finish(win);
  }
