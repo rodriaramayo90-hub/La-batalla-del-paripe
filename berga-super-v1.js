@@ -338,9 +338,8 @@ function playRealHorn(){
   for(const [frequency,shape] of [[370,'sawtooth'],[463,'square']]){
    const osc=c.createOscillator();osc.type=shape;osc.frequency.value=frequency;
    osc.connect(envelope);osc.start(t);osc.stop(t+.26);
-   osc.onended=()=>osc.disconnect();
+   osc.onended=()=>{osc.disconnect();if(frequency===463)envelope.disconnect()};
   }
-  envelope.onended=()=>envelope.disconnect();
  }catch(e){console.warn('[Bocinazo] Audio horn failed',e)}
 }
 function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=125&&S.t<232){const beat=Math.floor((S.t-125)/20);if(beat>S.horn){S.horn=beat;playRealHorn();haptic(20)}}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
