@@ -1,9 +1,9 @@
 /* Dra. En Berga — BOCINAZO FEROZ. Cinematic car, Dr. Tostador drives while Berga crosses over to honk, road rage and run-over. */
 (function(){'use strict';
-const S={active:false,t:0,length:320,speed:.72,a:null,b:null,hit:false,horn:0};
+const S={active:false,t:0,length:320,speed:.72,a:null,b:null,hit:false,horn:-1};
 window.BERGA_SUPER=S;
 const previousStrike=strike,previousUpdate=update,previousDraw=draw,previousHud=updateHud,previousReset=resetArcade;
-function reset(){S.active=false;S.t=0;S.a=null;S.b=null;S.hit=false;S.horn=0;}
+function reset(){S.active=false;S.t=0;S.a=null;S.b=null;S.hit=false;S.horn=-1;}
 resetArcade=function(){reset();return previousReset.apply(this,arguments)};
 function allowed(a,type){return type==='special'&&a?.id===5&&a.hp>0&&a.y===0&&a.attack<=0&&a.cool<=0&&a.stun<=0&&a.blockstun<=0&&!a.blocking&&!a.grabbed&&!a.grabbing&&a.escaping<=0&&(practice||a.meter>=100)&&introFrames<=0&&!ending&&!window.TREX_SUP?.active&&!window.DRAPIE_SUPER?.active&&!window.ALCA_SUPER?.active&&!S.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active)}
 strike=function(a,b,type,power,low){if(!allowed(a,type))return previousStrike.apply(this,arguments);
@@ -76,39 +76,52 @@ const bergaFrames={
  drive:[[31,427,311,127],[380,427,307,128],[725,427,305,127],[1101,427,274,126],[1419,427,297,126]],
  impact:[[17,625,278,101],[338,625,208,101],[659,625,140,101],[1095,625,238,101],[1354,625,363,101]]
 };
+// Keep the car and Tostador absolutely still. Only Berga's cut-out
+// moves across the wheel: no alternating heads, extra hands or bleed.
 let rageFramesCache=null;
 function correctedRageFrames(){
  if(rageFramesCache)return rageFramesCache;
  if(!bergaSheet.complete||!bergaSheet.naturalWidth)return null;
- const origins=[13,360,704,1049,1393],frames=[];
- for(let i=0;i<5;i++){
-  const canvas=document.createElement('canvas');canvas.width=328;canvas.height=164;
-  const c=canvas.getContext('2d');
-  // Stable Tostador steering wheel and a clean, single windshield.
+ const makeCanvas=()=>{
+  const canvas=document.createElement('canvas');
+  canvas.width=328;canvas.height=164;return canvas;
+ };
+ const passenger=makeCanvas();
+ // Single approved full-body pose, mirrored so her arm reaches Tostador.
+ const pc=passenger.getContext('2d');
+ pc.translate(328,0);pc.scale(-1,1);
+ pc.drawImage(bergaSheet,1049,213,328,164,0,0,328,164);
+ pc.setTransform(1,0,0,1,0,0);
+ // A close silhouette around Berga (NOT the right car door / stray hand).
+ // Points are local to the mirrored 166px passenger segment.
+ const clean=document.createElement('canvas');
+ clean.width=166;clean.height=164;
+ const cc=clean.getContext('2d');
+ cc.drawImage(passenger,0,0,166,164,0,0,166,164);
+ const mask=document.createElement('canvas');
+ mask.width=166;mask.height=164;
+ const mc=mask.getContext('2d');
+ mc.filter='blur(1.3px)';
+ mc.fillStyle='#fff';mc.beginPath();
+ const outline=[[19,139],[10,131],[9,116],[26,111],[32,104],
+ [47,100],[51,90],[51,82],[47,73],[52,58],[64,48],
+ [88,43],[115,45],[133,55],[143,69],[144,95],
+ [146,112],[144,138],[130,148],[95,145],[57,144]];
+ outline.forEach(([x,y],i)=>i?mc.lineTo(x,y):mc.moveTo(x,y));
+ mc.closePath();mc.fill();
+ cc.globalCompositeOperation='destination-in';cc.drawImage(mask,0,0);
+ cc.globalCompositeOperation='source-over';
+ const frames=[];
+ // Offsets model anticipation, reach and pressure. The face and arm art
+ // never switch to different source frames while pressing the horn.
+ for(const offset of [null,18,9,0]){
+  const frame=makeCanvas(),c=frame.getContext('2d');
   c.drawImage(bergaSheet,13,213,328,164,0,0,328,164);
-  if(i>0){
-   // Flip ONLY the passenger and her outstretched arm; never flip the doctor
-   // or the entire car. Thus Berga turns LEFT toward the driver's horn.
-   const passenger=document.createElement('canvas');
-   passenger.width=166;passenger.height=164;
-   const pc=passenger.getContext('2d');
-   pc.translate(166,0);pc.scale(-1,1);
-   pc.drawImage(bergaSheet,origins[i]+162,213,166,164,0,0,166,164);
-   pc.setTransform(1,0,0,1,0,0);
-   // Soft silhouette avoids cutout edges and excludes adjacent car/doctor.
-   const mask=document.createElement('canvas');mask.width=166;mask.height=164;
-   const mc=mask.getContext('2d');
-   mc.filter='blur(3px)';mc.fillStyle='#fff';mc.beginPath();
-   const outline=[[8,152],[3,119],[16,96],[13,82],[22,57],[48,36],[117,39],[139,54],[147,67],[149,159]];
-   outline.forEach(([x,y],k)=>k?mc.lineTo(x,y):mc.moveTo(x,y));
-   mc.closePath();mc.fill();
-   pc.globalCompositeOperation='destination-in';pc.drawImage(mask,0,0);
-   pc.globalCompositeOperation='source-over';
-   c.drawImage(passenger,162,0);
-  }
-  frames.push(canvas);
+  if(offset!==null)c.drawImage(clean,162+offset,0);
+  frames.push(frame);
  }
- rageFramesCache=frames;return frames;
+ rageFramesCache=frames;
+ return frames;
 }
 function illustratedScene(t){
  if(!bergaSheet.complete||!bergaSheet.naturalWidth)return false;
@@ -116,8 +129,10 @@ function illustratedScene(t){
  if(t>=94&&t<235){
   const frames=correctedRageFrames();
   if(!frames){ctx.restore();return false;}
-  const step=Math.min(4,Math.floor((t-94)/141*5));
-  // Remove the original sheet's purple header and keep one entire car.
+  // Three small approach poses, then one stable press pose. Releasing
+  // the horn moves only Berga's arm by nine source pixels.
+  const beat=t>=125?(t-125)%20:-1;
+  const step=t<110?0:t<118?1:t<125?2:beat<13?3:2;
   const w=836,h=390;
   ctx.drawImage(frames[step],0,12,328,150,(960-w)/2,(540-h)/2,w,h);
  }else{
@@ -133,27 +148,42 @@ function illustratedScene(t){
  ctx.restore();return true;
 }
 // The honk is a comic effect, NEVER synthesized dialogue.
+// A visible comic horn ONLY while her hand is pressing the steering wheel.
 function comicHonk(t){
- if(t<108||t>=235)return;
- const step=Math.floor((t-108)/17);
- const age=(t-108)%17/17;
- const sound=step%2===0?'¡PIIIIIIP!':'¡MOOOOOC!';
- const scale=(.74+Math.sin(Math.min(1,age*2)*Math.PI/2)*.36)*(step%2?1.04:1);
- const x=490+Math.sin(step*2.1)*35,y=75+Math.sin(t*.20)*4;
- ctx.save();ctx.translate(x,y);ctx.rotate((step%2?-.075:.075));ctx.scale(scale,scale);
- const spikes=14;
+ if(t<125||t>=232)return;
+ const beat=Math.floor((t-125)/20),phase=(t-125)%20;
+ if(phase>=13)return; // horn released, no floating onomatopoeia
+ const sound=beat%2===0?'¡PIIIIIIP!':'¡MOOOOOC!';
+ const ease=Math.sin(Math.min(1,phase/6)*Math.PI/2);
+ const scale=.82+ease*.19;
+ const x=480,y=85;
+ ctx.save();ctx.translate(x,y);ctx.rotate(beat%2?.032:-.032);
+ ctx.scale(scale,scale);
  ctx.beginPath();
- for(let i=0;i<spikes*2;i++){
-  const theta=i*Math.PI/spikes-Math.PI/2,r=i%2?115:154;
-  if(i===0)ctx.moveTo(Math.cos(theta)*r,Math.sin(theta)*r*.36);
-  else ctx.lineTo(Math.cos(theta)*r,Math.sin(theta)*r*.36);
+ for(let i=0;i<28;i++){
+  const theta=i*Math.PI/14-Math.PI/2,r=i%2?112:148;
+  if(!i)ctx.moveTo(Math.cos(theta)*r,Math.sin(theta)*r*.37);
+  else ctx.lineTo(Math.cos(theta)*r,Math.sin(theta)*r*.37);
  }
- ctx.closePath();ctx.fillStyle=step%2?'#fd4760':'#ffce35';
+ ctx.closePath();
+ ctx.fillStyle=beat%2?'#fd4760':'#ffce35';
  ctx.strokeStyle='#191130';ctx.lineWidth=8;ctx.fill();ctx.stroke();
- ctx.shadowColor='#ffdb67';ctx.shadowBlur=18;
- ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='italic 1000 48px system-ui';
- ctx.lineJoin='round';ctx.lineWidth=10;ctx.strokeStyle='#22152e';ctx.strokeText(sound,0,0);
- ctx.fillStyle=step%2?'#fff6b5':'#fff';ctx.fillText(sound,0,0);ctx.restore();
+ ctx.font='italic 1000 48px system-ui';ctx.textAlign='center';
+ ctx.textBaseline='middle';ctx.lineJoin='round';ctx.lineWidth=9;
+ ctx.strokeStyle='#22152e';ctx.strokeText(sound,0,0);
+ ctx.fillStyle='#fff9d5';ctx.fillText(sound,0,0);
+ ctx.restore();
+ // The impact sparks have one fixed origin at Berga's hand on the horn.
+ const hx=486,hy=382;
+ ctx.save();ctx.translate(hx,hy);
+ ctx.strokeStyle='#ffe66d';ctx.lineWidth=5;ctx.lineCap='round';
+ ctx.globalAlpha=Math.max(.20,1-phase/15);
+ for(let i=0;i<5;i++){
+  const theta=(-2.9+i*.43),r=21+phase*.75;
+  ctx.beginPath();ctx.moveTo(Math.cos(theta)*r,Math.sin(theta)*r);
+  ctx.lineTo(Math.cos(theta)*(r+20),Math.sin(theta)*(r+20));ctx.stroke();
+ }
+ ctx.restore();
 }
 // Extract ONLY the red car silhouette from the illustrated driving frame.
 // The old 'impact' row contains a fixed stranger, so it must never be used.
@@ -277,7 +307,7 @@ function cinematic(){
  window.SUPER_DEFENSE?.draw('berga',ctx,t);ctx.restore();
 }
 function impact(){if(S.hit)return;S.hit=true;const a=S.a,b=S.b;if(!b||b.hp<=0)return;const factor=window.SUPER_DEFENSE?.multiplier('berga')??1;window.SUPER_DEFENSE?.notice('berga');if(factor===0)return;const damage=MAX_HP*.48*factor;b.hp=clamp(b.hp-damage,0,MAX_HP);b.x=clamp(b.x+(a.dir||1)*115,80,880);b.knockback=(a.dir||1)*9;b.stun=Math.max(b.stun||0,78);b.blockstun=0;b.blocking=false;b.parryWindow=0;b.hitRecoil=1;b.hitStrength=1.9;b.hitDirection=a.dir||1;b.hitHeight=1;b.attack=0;b.hit=true;b.meter=clamp(b.meter+12,0,100);a.hit=true;a.connected=true;effects.push({x:b.x,y:235,t:34,burst:true,kind:-3,blocked:false});effects.push({x:b.x,y:150,t:50,text:'¡ATROPELLADO!',color:'#ffe38d'});shake=Math.max(shake,25);hitstop=Math.max(hitstop,11);sfx('hit',{intensity:2});haptic(90);if(a===player&&!practice)score+=Math.round(damage*18)}
-function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=98&&S.t<229&&Math.floor(S.t/20)>S.horn){S.horn=Math.floor(S.t/20);sfx('ready');haptic(20)}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
+function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=125&&S.t<232){const beat=Math.floor((S.t-125)/20);if(beat>S.horn){S.horn=beat;sfx('ready');haptic(20)}}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
 update=function(dt){if(S.active){tick(dt);return}return previousUpdate.apply(this,arguments)};
 draw=function(){previousDraw.apply(this,arguments);if(S.active)cinematic()};
 updateHud=function(){previousHud.apply(this,arguments);if(!player)return;const ready=player.id===5&&(practice||player.meter>=100)&&player.cool<=0&&!S.active;const btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('berga-super-ready',ready);if(ready){const label=btn.querySelector('small');if(label)label.textContent='SÚPER EX';btn.setAttribute('aria-label','Bocinazo feroz')}}if(ready&&$('cool'))$('cool').textContent='EX LLENO · ¡BOCINAZO FEROZ!'};
