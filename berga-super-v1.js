@@ -78,101 +78,95 @@ const bergaFrames={
 };
 // Keep the car and Tostador absolutely still. Only Berga's cut-out
 // moves across the wheel: no alternating heads, extra hands or bleed.
+// The cockpit, both rear seats, the doctor's face and his ONE steering
+// wheel all come from the SAME intact illustrated frame in EVERY pose.
+// The only moving overlay is a tightly masked sleeve/hand from Berga.
 let rageFramesCache=null;
 function correctedRageFrames(){
  if(rageFramesCache)return rageFramesCache;
  if(!bergaSheet.complete||!bergaSheet.naturalWidth)return null;
- const makeCanvas=()=>{
-  const canvas=document.createElement('canvas');
-  canvas.width=328;canvas.height=164;return canvas;
+ const newCanvas=(w=328,h=164)=>{
+  const result=document.createElement('canvas');result.width=w;result.height=h;return result;
  };
- const passenger=makeCanvas();
- // Single approved full-body pose, mirrored so her arm reaches Tostador.
- const pc=passenger.getContext('2d');
- pc.translate(328,0);pc.scale(-1,1);
- pc.drawImage(bergaSheet,1049,213,328,164,0,0,328,164);
- pc.setTransform(1,0,0,1,0,0);
- // A close silhouette around Berga (NOT the right car door / stray hand).
- // Points are local to the mirrored 166px passenger segment.
- const clean=document.createElement('canvas');
- clean.width=166;clean.height=164;
- const cc=clean.getContext('2d');
- cc.drawImage(passenger,0,0,166,164,0,0,166,164);
- const mask=document.createElement('canvas');
- mask.width=166;mask.height=164;
- const mc=mask.getContext('2d');
- mc.filter='blur(1.3px)';
- mc.fillStyle='#fff';mc.beginPath();
- const outline=[[19,139],[10,131],[9,116],[26,111],[32,104],
- [47,100],[51,90],[51,82],[47,73],[52,58],[64,48],
- [88,43],[115,45],[133,55],[143,69],[144,95],
- [146,112],[144,138],[130,148],[95,145],[57,144]];
+ const armSource=newCanvas();
+ const ac=armSource.getContext('2d');
+ ac.drawImage(bergaSheet,1049,213,328,164,0,0,328,164);
+ // The mask explicitly stops ABOVE the second wheel visible in the source.
+ const mask=newCanvas(),mc=mask.getContext('2d');
+ mc.fillStyle='#fff';
+ mc.beginPath();
+ const outline=[
+  [200,105],[211,102],[233,105],[249,112],[268,119],
+  [291,120],[312,120],[321,127],[319,137],[304,137],
+  [287,135],[268,134],[247,133],[231,139],[214,141],[200,135]
+ ];
  outline.forEach(([x,y],i)=>i?mc.lineTo(x,y):mc.moveTo(x,y));
  mc.closePath();mc.fill();
- cc.globalCompositeOperation='destination-in';cc.drawImage(mask,0,0);
- cc.globalCompositeOperation='source-over';
+ ac.globalCompositeOperation='destination-in';
+ ac.drawImage(mask,0,0);
+ ac.globalCompositeOperation='source-over';
+ // Mirror the isolated sleeve, not the passenger or any car interior.
+ // Source hand x≈310 maps to x≈148, the center of Tostador's existing wheel.
+ const arm=newCanvas(272,164),armCtx=arm.getContext('2d');
+ armCtx.setTransform(-272/328,0,0,1,272,0);
+ armCtx.drawImage(armSource,0,0);
+ armCtx.setTransform(1,0,0,1,0,0);
  const frames=[];
- // Offsets model anticipation, reach and pressure. The face and arm art
- // never switch to different source frames while pressing the horn.
- // The source windshield ALREADY includes Berga seated at right.
- // Removing her from the cabin before each moving pose is essential:
- // otherwise a second face remains visible behind the animated silhouette.
- function cleanEmptyPassengerSeat(c){
-  c.save();
-  c.beginPath();
-  c.moveTo(180,49);c.lineTo(324,49);c.lineTo(324,147);
-  c.lineTo(194,147);c.lineTo(194,118);c.lineTo(180,118);
-  c.closePath();
-  c.clip();
-  const cabin=c.createLinearGradient(177,53,310,146);
-  cabin.addColorStop(0,'#11172a');
-  cabin.addColorStop(.50,'#101525');
-  cabin.addColorStop(1,'#26283e');
-  c.fillStyle=cabin;c.fillRect(178,49,149,101);
-  // Reconstruct a dark passenger seat and the lower dashboard,
-  // keeping the red roof, mirror, doctor and windshield frame untouched.
-  c.fillStyle='#1b2035';c.strokeStyle='#33364c';c.lineWidth=2;
-  c.beginPath();c.roundRect(227,72,76,76,15);c.fill();c.stroke();
-  c.fillStyle='#181c30';c.beginPath();c.ellipse(262,82,39,20,0,0,Math.PI*2);c.fill();
-  c.fillStyle='#24263c';c.beginPath();c.roundRect(200,127,110,21,8);c.fill();
-  c.strokeStyle='#34283b';c.lineWidth=4;
-  c.beginPath();c.moveTo(194,146);c.lineTo(323,146);c.stroke();
-  c.restore();
-  // Restore the rear-view mirror without the original passenger's hair.
-  c.drawImage(bergaSheet,13+150,213+35,43,26,150,35,43,26);
- }
- for(const offset of [null,18,9,0]){
-  const frame=makeCanvas(),c=frame.getContext('2d');
+ // Seated -> reaches toward doctor -> touches original horn -> releases.
+ for(const offset of [null,20,10,0]){
+  const frame=newCanvas(),c=frame.getContext('2d');
   c.drawImage(bergaSheet,13,213,328,164,0,0,328,164);
-  if(offset!==null){
-   cleanEmptyPassengerSeat(c);
-   c.drawImage(clean,162+offset,0);
-  }
+  if(offset!==null)c.drawImage(arm,133+offset,0);
   frames.push(frame);
  }
- rageFramesCache=frames;
- return frames;
+ rageFramesCache=frames;return frames;
+}
+// Stable, real combat sprite for the entrance instead of distorted
+// hand-painted boarding frames with inconsistent faces and proportions.
+function boardingScene(t){
+ background(t);
+ const carArt=getMobileCar();
+ const arrival=Math.max(0,Math.min(1,t/29));
+ const ease=1-Math.pow(1-arrival,3);
+ const carX=-550+790*ease,carY=215,carW=635,carH=260;
+ ctx.save();ctx.fillStyle='rgba(10,12,32,.36)';
+ ctx.beginPath();ctx.ellipse(carX+carW*.53,464,carW*.39,16,0,0,Math.PI*2);ctx.fill();ctx.restore();
+ if(carArt)ctx.drawImage(carArt,carX,carY,carW,carH);
+ else car(carX+carW*.5,460,t);
+ if(t>=27&&t<83){
+  const progress=Math.min(1,(t-27)/56);
+  const approach=Math.min(1,progress/.72);
+  const fighterX=900-385*(1-Math.pow(1-approach,2));
+  ctx.save();
+  ctx.translate(fighterX,468);
+  ctx.scale(-1,1);
+  ctx.globalAlpha=progress<.72?1:Math.max(0,(1-progress)/.28);
+  // One unmodified, anatomically consistent Dra sprite, same as in combat.
+  const m=atlasMap[5];
+  SpriteAtlas.draw(ctx,atlases[m[0]],m[1],0,0,0,264);
+  ctx.restore();
+ }
+ if(t>=74&&t<94)text('¡AL COCHE!',480,100,40,'#fff0b2');
 }
 function illustratedScene(t){
  if(!bergaSheet.complete||!bergaSheet.naturalWidth)return false;
- ctx.save();ctx.fillStyle='#121027';ctx.fillRect(0,0,960,540);
- if(t>=94&&t<235){
+ ctx.save();
+ if(t<94){
+  boardingScene(t);
+ }else if(t<235){
   const frames=correctedRageFrames();
-  if(!frames){ctx.restore();return false;}
-  // Three small approach poses, then one stable press pose. Releasing
-  // the horn moves only Berga's arm by nine source pixels.
+  if(!frames){ctx.restore();return false}
   const beat=t>=125?(t-125)%20:-1;
   const step=t<110?0:t<118?1:t<125?2:beat<13?3:2;
   const w=836,h=390;
+  ctx.fillStyle='#121027';ctx.fillRect(0,0,960,540);
   ctx.drawImage(frames[step],0,12,328,150,(960-w)/2,(540-h)/2,w,h);
  }else{
-  const phase=t<94?'board':t<270?'drive':'impact';
-  const period=phase==='board'?94:phase==='drive'?35:50;
-  const start=phase==='board'?0:phase==='drive'?235:270;
-  const frames=bergaFrames[phase];
-  const step=Math.min(frames.length-1,Math.floor((t-start)/period*frames.length));
-  const r=frames[step],scale=phase==='board'?3.4:phase==='drive'?2.7:2.56;
-  const w=r[2]*scale,h=r[3]*scale;
+  // Kept for compatibility with existing callers; the final hit uses
+  // integratedAtropello(), which composites the actual enemy.
+  const frames=bergaFrames.drive,r=frames[0];
+  const scale=2.7,w=r[2]*scale,h=r[3]*scale;
+  ctx.fillStyle='#121027';ctx.fillRect(0,0,960,540);
   ctx.drawImage(bergaSheet,r[0],r[1],r[2],r[3],(960-w)/2,(540-h)/2,w,h);
  }
  ctx.restore();return true;
@@ -204,7 +198,7 @@ function comicHonk(t){
  ctx.fillStyle='#fff9d5';ctx.fillText(sound,0,0);
  ctx.restore();
  // The impact sparks have one fixed origin at Berga's hand on the horn.
- const hx=486,hy=382;
+ const hx=440,hy=394;
  ctx.save();ctx.translate(hx,hy);
  ctx.strokeStyle='#ffe66d';ctx.lineWidth=5;ctx.lineCap='round';
  ctx.globalAlpha=Math.max(.20,1-phase/15);
