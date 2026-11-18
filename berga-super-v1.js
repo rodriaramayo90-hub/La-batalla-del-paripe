@@ -106,11 +106,13 @@ function boardingScene(t){
  const characterX=carX+carW*.50;
  if(t>=23&&t<88){
   const walking=Math.max(0,Math.min(1,(t-23)/47));
-  const x=875+(characterX-875)*(1-Math.pow(1-walking,2));
+  // Approach the near-side passenger door from the rear of the car,
+  // never walk through its front bumper.
+  const x=35+(characterX-35)*(1-Math.pow(1-walking,2));
   const opacity=t<64?1:Math.max(0,(88-t)/24);
   if(opacity>0){
    ctx.save();ctx.globalAlpha=opacity;
-   ctx.translate(x,464);ctx.scale(-1,1);
+   ctx.translate(x,464);ctx.scale(1,1);
    const m=atlasMap[5];
    SpriteAtlas.draw(ctx,atlases[m[0]],m[1],0,0,0,277);
    ctx.restore();
