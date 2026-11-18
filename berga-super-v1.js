@@ -131,8 +131,23 @@ function boardingScene(t){
  const carX=-550+790*ease,carY=215,carW=635,carH=260;
  ctx.save();ctx.fillStyle='rgba(10,12,32,.36)';
  ctx.beginPath();ctx.ellipse(carX+carW*.53,464,carW*.39,16,0,0,Math.PI*2);ctx.fill();ctx.restore();
- if(carArt)ctx.drawImage(carArt,carX,carY,carW,carH);
- else car(carX+carW*.5,460,t);
+ if(carArt){
+  ctx.drawImage(carArt,carX,carY,carW,carH);
+  if(t<83){
+   // While Berga approaches the passenger door, leave the rear window
+   // empty so she is NOT simultaneously visible inside and outside.
+   ctx.save();ctx.translate(carX,carY);
+   ctx.scale(carW/311,carH/127);
+   ctx.globalAlpha=t>72?Math.max(0,(83-t)/11):1;
+   ctx.beginPath();ctx.moveTo(120,61);ctx.lineTo(141,55);
+   ctx.lineTo(159,53);ctx.lineTo(173,61);ctx.lineTo(173,79);
+   ctx.lineTo(120,79);ctx.closePath();ctx.clip();
+   const glass=ctx.createLinearGradient(120,55,175,81);
+   glass.addColorStop(0,'#111726');glass.addColorStop(1,'#20273a');
+   ctx.fillStyle=glass;ctx.fillRect(118,50,60,35);
+   ctx.restore();
+  }
+ }else car(carX+carW*.5,460,t);
  if(t>=27&&t<83){
   const progress=Math.min(1,(t-27)/56);
   const approach=Math.min(1,progress/.72);
