@@ -120,15 +120,15 @@ function correctedRageFrames(){
  function cleanEmptyPassengerSeat(c){
   c.save();
   c.beginPath();
-  c.moveTo(198,49);c.lineTo(324,49);c.lineTo(324,147);
-  c.lineTo(192,147);c.lineTo(192,117);c.lineTo(178,117);
-  c.lineTo(178,65);c.lineTo(194,65);c.closePath();
+  c.moveTo(180,49);c.lineTo(324,49);c.lineTo(324,147);
+  c.lineTo(194,147);c.lineTo(194,118);c.lineTo(180,118);
+  c.closePath();
   c.clip();
   const cabin=c.createLinearGradient(177,53,310,146);
   cabin.addColorStop(0,'#11172a');
   cabin.addColorStop(.50,'#101525');
   cabin.addColorStop(1,'#26283e');
-  c.fillStyle=cabin;c.fillRect(176,49,151,101);
+  c.fillStyle=cabin;c.fillRect(178,49,149,101);
   // Reconstruct a dark passenger seat and the lower dashboard,
   // keeping the red roof, mirror, doctor and windshield frame untouched.
   c.fillStyle='#1b2035';c.strokeStyle='#33364c';c.lineWidth=2;
