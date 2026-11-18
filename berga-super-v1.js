@@ -81,110 +81,87 @@ const bergaFrames={
 // The cockpit, both rear seats, the doctor's face and his ONE steering
 // wheel all come from the SAME intact illustrated frame in EVERY pose.
 // The only moving overlay is a tightly masked sleeve/hand from Berga.
-let rageFramesCache=null;
-function correctedRageFrames(){
- if(rageFramesCache)return rageFramesCache;
- if(!bergaSheet.complete||!bergaSheet.naturalWidth)return null;
- const newCanvas=(w=328,h=164)=>{
-  const result=document.createElement('canvas');result.width=w;result.height=h;return result;
- };
- const armSource=newCanvas();
- const ac=armSource.getContext('2d');
- ac.drawImage(bergaSheet,1049,213,328,164,0,0,328,164);
- // The mask explicitly stops ABOVE the second wheel visible in the source.
- const mask=newCanvas(),mc=mask.getContext('2d');
- mc.fillStyle='#fff';
- mc.beginPath();
- const outline=[
-  [200,105],[211,102],[233,105],[249,112],[268,119],
-  [291,120],[312,120],[321,127],[319,137],[304,137],
-  [287,135],[268,134],[247,133],[231,139],[214,141],[200,135]
- ];
- outline.forEach(([x,y],i)=>i?mc.lineTo(x,y):mc.moveTo(x,y));
- mc.closePath();mc.fill();
- ac.globalCompositeOperation='destination-in';
- ac.drawImage(mask,0,0);
- ac.globalCompositeOperation='source-over';
- // Mirror the isolated sleeve, not the passenger or any car interior.
- // Source hand x≈310 maps to x≈148, the center of Tostador's existing wheel.
- const arm=newCanvas(272,164),armCtx=arm.getContext('2d');
- armCtx.setTransform(-272/328,0,0,1,272,0);
- armCtx.drawImage(armSource,0,0);
- armCtx.setTransform(1,0,0,1,0,0);
- const frames=[];
- // Seated -> reaches toward doctor -> touches original horn -> releases.
- for(const offset of [null,20,10,0]){
-  const frame=newCanvas(),c=frame.getContext('2d');
-  c.drawImage(bergaSheet,13,213,328,164,0,0,328,164);
-  if(offset!==null)c.drawImage(arm,133+offset,0);
-  frames.push(frame);
- }
- rageFramesCache=frames;return frames;
-}
-// Stable, real combat sprite for the entrance instead of distorted
-// hand-painted boarding frames with inconsistent faces and proportions.
+// New complete, single-piece artwork. Never paste a second Berga/arm/seat
+// over an already-drawn Berga: the entire cockpit is one consistent frame.
+// The companion sprite has empty dark windows during boarding.
+const bergaCinematicArt=new Image();
+fetch('assets/berga-bocinazo-cinematic-v2.b64?v=1')
+ .then(r=>{if(!r.ok)throw new Error('Bocinazo v2 image HTTP '+r.status);return r.text()})
+ .then(data=>{
+  const encoded=data.replace(/\s/g,'');
+  if(!encoded.startsWith('UklGR'))throw new Error('Invalid Bocinazo v2 WebP asset');
+  bergaCinematicArt.src='data:image/webp;base64,'+encoded;
+ })
+ .catch(err=>console.warn('[Bocinazo Feroz] Full cockpit illustration failed to load',err));
+function newArtReady(){return bergaCinematicArt.complete&&bergaCinematicArt.naturalWidth>=960}
+// The stage stays visible, and a car with EMPTY tinted windows approaches.
+// Dra walks behind the bodywork into its passenger door; she is never
+// already sitting in the car while also visible outside.
 function boardingScene(t){
- background(t);
- const carArt=getMobileCar();
- const arrival=Math.max(0,Math.min(1,t/29));
- const ease=1-Math.pow(1-arrival,3);
- const carX=-550+790*ease,carY=215,carW=635,carH=260;
- ctx.save();ctx.fillStyle='rgba(10,12,32,.36)';
- ctx.beginPath();ctx.ellipse(carX+carW*.53,464,carW*.39,16,0,0,Math.PI*2);ctx.fill();ctx.restore();
- if(carArt){
-  ctx.drawImage(carArt,carX,carY,carW,carH);
-  if(t<83){
-   // While Berga approaches the passenger door, leave the rear window
-   // empty so she is NOT simultaneously visible inside and outside.
-   ctx.save();ctx.translate(carX,carY);
-   ctx.scale(carW/311,carH/127);
-   ctx.globalAlpha=t>72?Math.max(0,(83-t)/11):1;
-   ctx.beginPath();ctx.moveTo(120,61);ctx.lineTo(141,55);
-   ctx.lineTo(159,53);ctx.lineTo(173,61);ctx.lineTo(173,79);
-   ctx.lineTo(120,79);ctx.closePath();ctx.clip();
-   const glass=ctx.createLinearGradient(120,55,175,81);
-   glass.addColorStop(0,'#111726');glass.addColorStop(1,'#20273a');
-   ctx.fillStyle=glass;ctx.fillRect(118,50,60,35);
+ ctx.clearRect(0,0,960,540);
+ ctx.fillStyle='rgba(11,6,28,.20)';ctx.fillRect(0,0,960,540);
+ const approach=Math.max(0,Math.min(1,t/30));
+ const ease=1-Math.pow(1-approach,3);
+ const carW=610,carH=249,carX=-650+835*ease,carY=463-carH;
+ const characterX=carX+carW*.50;
+ if(t>=23&&t<88){
+  const walking=Math.max(0,Math.min(1,(t-23)/47));
+  const x=875+(characterX-875)*(1-Math.pow(1-walking,2));
+  const opacity=t<64?1:Math.max(0,(88-t)/24);
+  if(opacity>0){
+   ctx.save();ctx.globalAlpha=opacity;
+   ctx.translate(x,464);ctx.scale(-1,1);
+   const m=atlasMap[5];
+   SpriteAtlas.draw(ctx,atlases[m[0]],m[1],0,0,0,277);
    ctx.restore();
   }
- }else car(carX+carW*.5,460,t);
- if(t>=27&&t<83){
-  const progress=Math.min(1,(t-27)/56);
-  const approach=Math.min(1,progress/.72);
-  const fighterX=900-385*(1-Math.pow(1-approach,2));
-  ctx.save();
-  ctx.translate(fighterX,468);
-  ctx.scale(-1,1);
-  ctx.globalAlpha=progress<.72?1:Math.max(0,(1-progress)/.28);
-  // One unmodified, anatomically consistent Dra sprite, same as in combat.
-  const m=atlasMap[5];
-  SpriteAtlas.draw(ctx,atlases[m[0]],m[1],0,0,0,264);
-  ctx.restore();
  }
- if(t>=74&&t<94)text('¡AL COCHE!',480,100,40,'#fff0b2');
+ ctx.save();ctx.fillStyle='rgba(11,9,32,.33)';
+ ctx.beginPath();ctx.ellipse(carX+carW*.51,463,carW*.34,13,0,0,Math.PI*2);ctx.fill();ctx.restore();
+ if(newArtReady()){
+  // Our own 311×127 car: tinted glass, no one drawn in either front seat.
+  ctx.drawImage(bergaCinematicArt,0,540,311,127,carX,carY,carW,carH);
+ }else{
+  // Deliberately featureless fallback, never the old duplicate-actor image.
+  ctx.fillStyle='#bd2848';ctx.beginPath();ctx.roundRect(carX+45,carY+95,carW-65,carH-95,27);ctx.fill();
+  ctx.fillStyle='#19243b';ctx.fillRect(carX+180,carY+45,carW*.48,70);
+  for(const wx of [carX+140,carX+carW-115]){
+   ctx.fillStyle='#191c2c';ctx.beginPath();ctx.arc(wx,carY+carH-11,42,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#c4c2c9';ctx.beginPath();ctx.arc(wx,carY+carH-11,20,0,Math.PI*2);ctx.fill();
+  }
+ }
+ if(t>=72&&t<89)text('¡AL COCHE!',480,86,39,'#fff0b2');
+ // A short deliberate film cut conceals the transition to the front angle.
+ const shutter=Math.max(0,Math.min(1,(t-87)/7));
+ if(shutter){ctx.fillStyle='rgba(8,7,26,'+shutter+')';ctx.fillRect(0,0,960,540)}
+}
+function hornCockpitScene(t){
+ ctx.fillStyle='#0e091e';ctx.fillRect(0,0,960,540);
+ if(!newArtReady()){
+  // Unaltered TWO-PERSON windshield from original sheet while v2 loads.
+  if(bergaSheet.complete&&bergaSheet.naturalWidth)
+   ctx.drawImage(bergaSheet,13,213,328,164,65,57,830,415);
+  else text('¡BOCINAZO FEROZ!',480,235,50,'#ffe484');
+  return;
+ }
+ // Stable faces, ONE wheel, uninterrupted back seats and car interior.
+ // Camera movement acts on the COMPLETE illustration; no loose body parts.
+ const settle=Math.max(0,Math.min(1,(t-94)/28));
+ const zoom=1.09-.09*settle;
+ const honking=t>=125&&(t-125)%20<13;
+ const vibration=honking?Math.sin(t*.65)*1.6:0;
+ ctx.save();ctx.translate(480+vibration,270);
+ ctx.scale(zoom,zoom);ctx.translate(-480,-270);
+ ctx.drawImage(bergaCinematicArt,0,0,960,540,0,0,960,540);
+ ctx.restore();
+ // Fade in from the boarding shutter; no double image between scenes.
+ const shutter=Math.max(0,1-(t-94)/8);
+ if(shutter){ctx.fillStyle='rgba(8,7,26,'+shutter+')';ctx.fillRect(0,0,960,540)}
 }
 function illustratedScene(t){
- if(!bergaSheet.complete||!bergaSheet.naturalWidth)return false;
- ctx.save();
- if(t<94){
-  boardingScene(t);
- }else if(t<235){
-  const frames=correctedRageFrames();
-  if(!frames){ctx.restore();return false}
-  const beat=t>=125?(t-125)%20:-1;
-  const step=t<110?0:t<118?1:t<125?2:beat<13?3:2;
-  const w=836,h=390;
-  ctx.fillStyle='#121027';ctx.fillRect(0,0,960,540);
-  ctx.drawImage(frames[step],0,12,328,150,(960-w)/2,(540-h)/2,w,h);
- }else{
-  // Kept for compatibility with existing callers; the final hit uses
-  // integratedAtropello(), which composites the actual enemy.
-  const frames=bergaFrames.drive,r=frames[0];
-  const scale=2.7,w=r[2]*scale,h=r[3]*scale;
-  ctx.fillStyle='#121027';ctx.fillRect(0,0,960,540);
-  ctx.drawImage(bergaSheet,r[0],r[1],r[2],r[3],(960-w)/2,(540-h)/2,w,h);
- }
- ctx.restore();return true;
+ if(t<94)boardingScene(t);
+ else hornCockpitScene(t);
+ return true;
 }
 // The honk is a comic effect, NEVER synthesized dialogue.
 // A visible comic horn ONLY while her hand is pressing the steering wheel.
@@ -213,7 +190,7 @@ function comicHonk(t){
  ctx.fillStyle='#fff9d5';ctx.fillText(sound,0,0);
  ctx.restore();
  // The impact sparks have one fixed origin at Berga's hand on the horn.
- const hx=440,hy=394;
+ const hx=295,hy=414;
  ctx.save();ctx.translate(hx,hy);
  ctx.strokeStyle='#ffe66d';ctx.lineWidth=5;ctx.lineCap='round';
  ctx.globalAlpha=Math.max(.20,1-phase/15);
