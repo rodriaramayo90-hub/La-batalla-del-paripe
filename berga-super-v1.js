@@ -114,10 +114,40 @@ function correctedRageFrames(){
  const frames=[];
  // Offsets model anticipation, reach and pressure. The face and arm art
  // never switch to different source frames while pressing the horn.
+ // The source windshield ALREADY includes Berga seated at right.
+ // Removing her from the cabin before each moving pose is essential:
+ // otherwise a second face remains visible behind the animated silhouette.
+ function cleanEmptyPassengerSeat(c){
+  c.save();
+  c.beginPath();
+  c.moveTo(198,49);c.lineTo(324,49);c.lineTo(324,147);
+  c.lineTo(192,147);c.lineTo(192,117);c.lineTo(178,117);
+  c.lineTo(178,65);c.lineTo(194,65);c.closePath();
+  c.clip();
+  const cabin=c.createLinearGradient(177,53,310,146);
+  cabin.addColorStop(0,'#11172a');
+  cabin.addColorStop(.50,'#101525');
+  cabin.addColorStop(1,'#26283e');
+  c.fillStyle=cabin;c.fillRect(176,49,151,101);
+  // Reconstruct a dark passenger seat and the lower dashboard,
+  // keeping the red roof, mirror, doctor and windshield frame untouched.
+  c.fillStyle='#1b2035';c.strokeStyle='#33364c';c.lineWidth=2;
+  c.beginPath();c.roundRect(227,72,76,76,15);c.fill();c.stroke();
+  c.fillStyle='#181c30';c.beginPath();c.ellipse(262,82,39,20,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#24263c';c.beginPath();c.roundRect(200,127,110,21,8);c.fill();
+  c.strokeStyle='#34283b';c.lineWidth=4;
+  c.beginPath();c.moveTo(194,146);c.lineTo(323,146);c.stroke();
+  c.restore();
+  // Restore the rear-view mirror without the original passenger's hair.
+  c.drawImage(bergaSheet,13+150,213+35,43,26,150,35,43,26);
+ }
  for(const offset of [null,18,9,0]){
   const frame=makeCanvas(),c=frame.getContext('2d');
   c.drawImage(bergaSheet,13,213,328,164,0,0,328,164);
-  if(offset!==null)c.drawImage(clean,162+offset,0);
+  if(offset!==null){
+   cleanEmptyPassengerSeat(c);
+   c.drawImage(clean,162+offset,0);
+  }
   frames.push(frame);
  }
  rageFramesCache=frames;
