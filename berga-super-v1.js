@@ -323,7 +323,27 @@ function cinematic(){
  window.SUPER_DEFENSE?.draw('berga',ctx,t);ctx.restore();
 }
 function impact(){if(S.hit)return;S.hit=true;const a=S.a,b=S.b;if(!b||b.hp<=0)return;const factor=window.SUPER_DEFENSE?.multiplier('berga')??1;window.SUPER_DEFENSE?.notice('berga');if(factor===0)return;const damage=MAX_HP*.48*factor;b.hp=clamp(b.hp-damage,0,MAX_HP);b.x=clamp(b.x+(a.dir||1)*115,80,880);b.knockback=(a.dir||1)*9;b.stun=Math.max(b.stun||0,78);b.blockstun=0;b.blocking=false;b.parryWindow=0;b.hitRecoil=1;b.hitStrength=1.9;b.hitDirection=a.dir||1;b.hitHeight=1;b.attack=0;b.hit=true;b.meter=clamp(b.meter+12,0,100);a.hit=true;a.connected=true;effects.push({x:b.x,y:235,t:34,burst:true,kind:-3,blocked:false});effects.push({x:b.x,y:150,t:50,text:'¡ATROPELLADO!',color:'#ffe38d'});shake=Math.max(shake,25);hitstop=Math.max(hitstop,11);sfx('hit',{intensity:2});haptic(90);if(a===player&&!practice)score+=Math.round(damage*18)}
-function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=125&&S.t<232){const beat=Math.floor((S.t-125)/20);if(beat>S.horn){S.horn=beat;sfx('ready');haptic(20)}}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
+// Short low two-tone horn, routed through the game's existing FX mixer.
+// No speech, and respects Sound OFF.
+function playRealHorn(){
+ try{
+  if(!audio||audio.muted||!audio.context||audio.context.state!=='running')return;
+  const c=audio.context,t=c.currentTime,output=audio.fx||audio.master||c.destination;
+  const envelope=c.createGain();
+  envelope.gain.setValueAtTime(.0001,t);
+  envelope.gain.exponentialRampToValueAtTime(.13,t+.025);
+  envelope.gain.setValueAtTime(.13,t+.16);
+  envelope.gain.exponentialRampToValueAtTime(.0001,t+.24);
+  envelope.connect(output);
+  for(const [frequency,shape] of [[370,'sawtooth'],[463,'square']]){
+   const osc=c.createOscillator();osc.type=shape;osc.frequency.value=frequency;
+   osc.connect(envelope);osc.start(t);osc.stop(t+.26);
+   osc.onended=()=>osc.disconnect();
+  }
+  envelope.onended=()=>envelope.disconnect();
+ }catch(e){console.warn('[Bocinazo] Audio horn failed',e)}
+}
+function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=125&&S.t<232){const beat=Math.floor((S.t-125)/20);if(beat>S.horn){S.horn=beat;playRealHorn();haptic(20)}}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
 update=function(dt){if(S.active){tick(dt);return}return previousUpdate.apply(this,arguments)};
 draw=function(){previousDraw.apply(this,arguments);if(S.active)cinematic()};
 updateHud=function(){previousHud.apply(this,arguments);if(!player)return;const ready=player.id===5&&(practice||player.meter>=100)&&player.cool<=0&&!S.active;const btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('berga-super-ready',ready);if(ready){const label=btn.querySelector('small');if(label)label.textContent='SÚPER EX';btn.setAttribute('aria-label','Bocinazo feroz')}}if(ready&&$('cool'))$('cool').textContent='EX LLENO · ¡BOCINAZO FEROZ!'};
