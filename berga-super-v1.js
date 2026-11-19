@@ -100,48 +100,50 @@ function newArtReady(){return bergaCinematicArt.complete&&bergaCinematicArt.natu
 // Opaque glass for the car's arrival. We precompose ONE bitmap so the
 // boarding animation never shows cropped faces or flickering occupants.
 // The cockpit close-up is a separate scene and remains unchanged.
-let arrivalDarkCar=null;
-function getArrivalDarkCar(){
- if(arrivalDarkCar)return arrivalDarkCar;
- if(!newArtReady())return null;
- const sheet=document.createElement('canvas');
- sheet.width=311;sheet.height=127;
- const c=sheet.getContext('2d');
- if(!c)return null;
- c.drawImage(bergaCinematicArt,0,540,311,127,0,0,311,127);
- function glass(points){
-  c.beginPath();
-  points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));
-  c.closePath();
-  c.fillStyle='#090f1d';c.fill();
-  c.strokeStyle='#243348';c.lineWidth=.85;c.stroke();
+// ONE complete transparent WebP sprite for both arrival and run-over.
+// The windows, paint, trim, wheels and glass reflections are baked into
+// the same illustration; no polygon overlays or people in the glass.
+const UNIFIED_CAR_RATIO=519/1024;
+const unifiedCarImage=new Image();
+fetch('assets/berga-car-unified-v1.b64?v=1')
+ .then(response=>{if(!response.ok)throw new Error('Unified car HTTP '+response.status);return response.text()})
+ .then(base64=>{
+  const data=base64.replace(/\s+/g,'');
+  if(!data.startsWith('UklGR'))throw new Error('Invalid unified car WebP');
+  unifiedCarImage.src='data:image/webp;base64,'+data;
+ })
+ .catch(error=>console.warn('[Bocinazo Feroz] Unified car unavailable',error));
+function getUnifiedCar(){
+ return unifiedCarImage.complete&&unifiedCarImage.naturalWidth>700?unifiedCarImage:null;
+}
+function drawUnifiedCar(x,ground,width,t=0){
+ const image=getUnifiedCar();
+ const height=width*UNIFIED_CAR_RATIO;
+ const bob=t>0?Math.sin(t*.45)*1.5:0;
+ if(image){
+  // One drawImage call: exact same intact image in both cinematic scenes.
+  ctx.drawImage(image,x,ground-height+bob,width,height);
+ }else{
+  // Minimal single fallback body if image hasn't loaded yet (never old car).
+  ctx.save();ctx.translate(x,ground-height+bob);ctx.scale(width/610,height/309);
+  ctx.fillStyle='#aa1734';ctx.beginPath();
+  ctx.moveTo(15,170);ctx.lineTo(75,112);ctx.lineTo(125,45);
+  ctx.lineTo(396,42);ctx.lineTo(464,110);ctx.lineTo(577,161);
+  ctx.lineTo(602,270);ctx.lineTo(15,270);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#101827';ctx.beginPath();ctx.moveTo(118,65);
+  ctx.lineTo(393,65);ctx.lineTo(444,127);ctx.lineTo(85,127);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#171625';for(const xw of [112,488]){
+   ctx.beginPath();ctx.arc(xw,278,54,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
  }
- // Cover every window with solid dark glass, following the actual car
- // silhouette. These coordinates are native to the 311x127 art cell.
- glass([[110,60],[158,59],[158,77],[108,77]]); // rear side window
- glass([[170,59],[191,59],[217,77],[170,77]]); // passenger/driver side
- glass([[197,58],[243,78],[220,78]]);          // angled windshield
- // The original graphic has a small face visible through the B pillar:
- // replace that strip with the same solid pillar all the way down.
- c.beginPath();
- [[158,57],[164,56],[171,76],[163,78]].forEach(([x,y],i)=>
-   i?c.lineTo(x,y):c.moveTo(x,y));
- c.closePath();c.fillStyle='#111622';c.fill();
- c.strokeStyle='#3a3b48';c.lineWidth=1.6;
- c.beginPath();c.moveTo(159,59);c.lineTo(165,76);c.stroke();
- // A single understated specular reflection: windows remain opaque.
- c.strokeStyle='rgba(91,116,145,.27)';c.lineWidth=1;
- c.beginPath();c.moveTo(114,61.5);c.lineTo(153,61.5);
- c.moveTo(173,61);c.lineTo(187,61);c.stroke();
- arrivalDarkCar=sheet;
- return sheet;
 }
 function boardingScene(t){
  ctx.clearRect(0,0,960,540);
  ctx.fillStyle='rgba(11,6,28,.20)';ctx.fillRect(0,0,960,540);
  const approach=Math.max(0,Math.min(1,t/30));
  const ease=1-Math.pow(1-approach,3);
- const carW=610,carH=249,carX=-650+835*ease,carY=463-carH;
+ const carW=610,carH=carW*UNIFIED_CAR_RATIO,carX=-650+835*ease,carY=463-carH;
  const characterX=carX+carW*.50;
  if(t>=23&&t<88){
   const walking=Math.max(0,Math.min(1,(t-23)/47));
@@ -159,20 +161,8 @@ function boardingScene(t){
  }
  ctx.save();ctx.fillStyle='rgba(11,9,32,.33)';
  ctx.beginPath();ctx.ellipse(carX+carW*.51,463,carW*.34,13,0,0,Math.PI*2);ctx.fill();ctx.restore();
- const opaqueCar=getArrivalDarkCar();
- if(opaqueCar){
-  // The windows stay fully opaque throughout the ENTIRE arrival, including
-  // the cut to the driver's close-up. No people visible from outside.
-  ctx.drawImage(opaqueCar,carX,carY,carW,carH);
- }else{
-  // Deliberately featureless fallback, never the old duplicate-actor image.
-  ctx.fillStyle='#bd2848';ctx.beginPath();ctx.roundRect(carX+45,carY+95,carW-65,carH-95,27);ctx.fill();
-  ctx.fillStyle='#19243b';ctx.fillRect(carX+180,carY+45,carW*.48,70);
-  for(const wx of [carX+140,carX+carW-115]){
-   ctx.fillStyle='#191c2c';ctx.beginPath();ctx.arc(wx,carY+carH-11,42,0,Math.PI*2);ctx.fill();
-   ctx.fillStyle='#c4c2c9';ctx.beginPath();ctx.arc(wx,carY+carH-11,20,0,Math.PI*2);ctx.fill();
-  }
- }
+ // Same integrated sprite used again during the final attack.
+ drawUnifiedCar(carX,463,carW);
  if(t>=72&&t<89)text('¡AL COCHE!',480,86,39,'#fff0b2');
  // A short deliberate film cut conceals the transition to the front angle.
  const shutter=Math.max(0,Math.min(1,(t-87)/7));
@@ -246,20 +236,6 @@ function comicHonk(t){
 }
 // Extract ONLY the red car silhouette from the illustrated driving frame.
 // The old 'impact' row contains a fixed stranger, so it must never be used.
-let mobileCarSprite=null;
-function getMobileCar(){
- if(mobileCarSprite)return mobileCarSprite;
- if(!bergaSheet.complete||!bergaSheet.naturalWidth)return null;
- const canvas=document.createElement('canvas');canvas.width=311;canvas.height=127;
- const c=canvas.getContext('2d');
- c.save();c.beginPath();
- const outline=[[76,127],[78,112],[80,98],[85,84],[99,77],[108,74],
- [117,57],[130,51],[142,47],[203,46],[214,47],[228,54],
- [246,73],[260,78],[279,84],[289,97],[294,107],[294,117],[289,126]];
- outline.forEach(([x,y],index)=>index?c.lineTo(x,y):c.moveTo(x,y));
- c.closePath();c.clip();c.drawImage(bergaSheet,31,427,311,127,0,0,311,127);c.restore();
- mobileCarSprite=canvas;return canvas;
-}
 function drawPracticeMannequin(x,y,t,hit,guard){
  ctx.save();ctx.translate(x,y);
  if(hit&&!guard){const p=Math.max(0,Math.min(1,(t-270)/43));ctx.translate(p*88,-118*Math.sin(Math.PI*p));ctx.rotate(-.65*Math.sin(Math.PI*p))}
@@ -324,23 +300,18 @@ function integratedAtropello(t){
   ctx.beginPath();ctx.moveTo((shift%1200)-180,400+i*7);
   ctx.lineTo((shift%1200)+140,320+i*4);ctx.stroke();
  }
- const carArt=getMobileCar();
+ // The identical vehicle sprite from the boarding sequence.
  const progress=Math.max(0,Math.min(1,(t-235)/35));
  const x=t<270?-620+835*progress:215+Math.min(1,(t-270)/40)*1040;
- const carWidth=622,carHeight=254,carY=463-carHeight;
+ const carWidth=610,carHeight=carWidth*UNIFIED_CAR_RATIO,carY=463-carHeight;
  const perfect=window.SUPER_DEFENSE?.result('berga')==='perfect';
  // Victim starts in front of the approaching car; after impact, draw again
  // above the moving vehicle so the game character visibly tumbles.
  if(t<270||perfect)drawActualRival(t,false);
  ctx.save();ctx.fillStyle='rgba(18,16,41,.30)';
  ctx.beginPath();ctx.ellipse(x+395,468,210,13,0,0,Math.PI*2);ctx.fill();ctx.restore();
- if(carArt){
-  ctx.save();ctx.translate(x,carY+Math.sin(t*.72)*2);
-  ctx.drawImage(carArt,0,0,carWidth,carHeight);ctx.restore();
- }else{
-  // Startup fallback when illustrated asset is still loading.
-  car(x+370,450,t);
- }
+ // Same whole-car image as the arrival, with the same intrinsic aspect ratio.
+ drawUnifiedCar(x,463,carWidth,t);
  // Dust follows the wheels without carrying the baked-in opponent.
  ctx.save();ctx.globalAlpha=.45;
  for(let i=0;i<6;i++){const dx=x+130-i*32,dy=444-i%2*13;
