@@ -97,6 +97,45 @@ function newArtReady(){return bergaCinematicArt.complete&&bergaCinematicArt.natu
 // The stage stays visible, and a car with EMPTY tinted windows approaches.
 // Dra walks behind the bodywork into its passenger door; she is never
 // already sitting in the car while also visible outside.
+// Opaque glass for the car's arrival. We precompose ONE bitmap so the
+// boarding animation never shows cropped faces or flickering occupants.
+// The cockpit close-up is a separate scene and remains unchanged.
+let arrivalDarkCar=null;
+function getArrivalDarkCar(){
+ if(arrivalDarkCar)return arrivalDarkCar;
+ if(!newArtReady())return null;
+ const sheet=document.createElement('canvas');
+ sheet.width=311;sheet.height=127;
+ const c=sheet.getContext('2d');
+ if(!c)return null;
+ c.drawImage(bergaCinematicArt,0,540,311,127,0,0,311,127);
+ function glass(points){
+  c.beginPath();
+  points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));
+  c.closePath();
+  c.fillStyle='#090f1d';c.fill();
+  c.strokeStyle='#243348';c.lineWidth=.85;c.stroke();
+ }
+ // Cover every window with solid dark glass, following the actual car
+ // silhouette. These coordinates are native to the 311x127 art cell.
+ glass([[110,60],[158,59],[158,77],[108,77]]); // rear side window
+ glass([[170,59],[191,59],[217,77],[170,77]]); // passenger/driver side
+ glass([[197,58],[243,78],[220,78]]);          // angled windshield
+ // The original graphic has a small face visible through the B pillar:
+ // replace that strip with the same solid pillar all the way down.
+ c.beginPath();
+ [[158,57],[164,56],[171,76],[163,78]].forEach(([x,y],i)=>
+   i?c.lineTo(x,y):c.moveTo(x,y));
+ c.closePath();c.fillStyle='#111622';c.fill();
+ c.strokeStyle='#3a3b48';c.lineWidth=1.6;
+ c.beginPath();c.moveTo(159,59);c.lineTo(165,76);c.stroke();
+ // A single understated specular reflection: windows remain opaque.
+ c.strokeStyle='rgba(91,116,145,.27)';c.lineWidth=1;
+ c.beginPath();c.moveTo(114,61.5);c.lineTo(153,61.5);
+ c.moveTo(173,61);c.lineTo(187,61);c.stroke();
+ arrivalDarkCar=sheet;
+ return sheet;
+}
 function boardingScene(t){
  ctx.clearRect(0,0,960,540);
  ctx.fillStyle='rgba(11,6,28,.20)';ctx.fillRect(0,0,960,540);
@@ -120,9 +159,11 @@ function boardingScene(t){
  }
  ctx.save();ctx.fillStyle='rgba(11,9,32,.33)';
  ctx.beginPath();ctx.ellipse(carX+carW*.51,463,carW*.34,13,0,0,Math.PI*2);ctx.fill();ctx.restore();
- if(newArtReady()){
-  // Our own 311×127 car: tinted glass, no one drawn in either front seat.
-  ctx.drawImage(bergaCinematicArt,0,540,311,127,carX,carY,carW,carH);
+ const opaqueCar=getArrivalDarkCar();
+ if(opaqueCar){
+  // The windows stay fully opaque throughout the ENTIRE arrival, including
+  // the cut to the driver's close-up. No people visible from outside.
+  ctx.drawImage(opaqueCar,carX,carY,carW,carH);
  }else{
   // Deliberately featureless fallback, never the old duplicate-actor image.
   ctx.fillStyle='#bd2848';ctx.beginPath();ctx.roundRect(carX+45,carY+95,carW-65,carH-95,27);ctx.fill();
