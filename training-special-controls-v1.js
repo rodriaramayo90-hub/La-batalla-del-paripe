@@ -40,9 +40,9 @@ css.textContent=[
 document.head.appendChild(css);
 const originalStrike=strike,originalHud=updateHud,originalUpdate=update;
 let requestingSuper=false;
-const supported=id=>id===0||id===1||id===5||id===6||id===9;
+const supported=id=>id===0||id===1||id===2||id===5||id===6||id===9;
 const inTraining=()=>mode==='game'&&practice&&!LOCAL.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active);
-const cinematicActive=()=>!!(window.TREX_SUP?.active||window.DRAPIE_SUPER?.active||window.ALCA_SUPER?.active||window.BERGA_SUPER?.active||window.MALEFICA_SUPER?.active);
+const cinematicActive=()=>!!(window.TREX_SUP?.active||window.DRAPIE_SUPER?.active||window.ALCA_SUPER?.active||window.BERGA_SUPER?.active||window.MALEFICA_SUPER?.active||window.COQUI_SUPER?.active);
 // En campaña, una barra EX llena reserva el próximo especial para la
 // cinemática. Si aún está en el aire o impedido, no gastarlo en uno normal.
 // La práctica mantiene dos botones separados y VS/online no se modifican.
@@ -129,7 +129,7 @@ humanInput=function(slot,key,pressed,source){
 function refreshPracticeUI(){
  const active=inTraining(),available=active&&supported(player?.id);
  superButton.disabled=!isReady();
- superButton.title=!available?'Súper EX: Alcahueta, T-Rex, Dra. En Berga, La Drapie y Maléfica':'Súper EX · U · PS4 R2 + ○';
+ superButton.title=!available?'Súper EX: Alcahueta, T-Rex, Coqui, Dra. En Berga, La Drapie y Maléfica':'Súper EX · U · PS4 R2 + ○';
  if(!active){
   if(LOCAL.active){
    const normal=document.querySelector('#game [data-key="special"]');
@@ -148,7 +148,7 @@ function refreshPracticeUI(){
  }
  const normal=document.querySelector('#game [data-key="special"]');
  if(normal){
-  normal.classList.remove('trex-super-ready','drapie-super-ready','alca-super-ready','malefica-super-ready');
+  normal.classList.remove('trex-super-ready','drapie-super-ready','alca-super-ready','malefica-super-ready','coqui-super-ready');
   const small=normal.querySelector('small');
   if(small)small.textContent='ESPECIAL';
   normal.setAttribute('aria-label','Especial normal');
