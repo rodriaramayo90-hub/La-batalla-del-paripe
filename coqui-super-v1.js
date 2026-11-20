@@ -139,8 +139,18 @@ fetch('assets/coqui-reformas-atlas-v2.b64?v=2').then(r=>{
    canvas.width=600;canvas.height=440;
    const c=canvas.getContext('2d');
    const cw=art.naturalWidth/4,ch=art.naturalHeight/3;
-   // Anchoring all twelve 350 px drawings to the same floor baseline.
-   c.drawImage(art,(i%4)*cw,Math.floor(i/4)*ch,cw,ch,70,60,350,350);
+   const col=i%4,row=Math.floor(i/4);
+   // The source illustration is hand-painted, not a perfectly contained grid:
+   // the back legs in poses 3, 6 and 10 cross into the cell on the left.
+   // Recover those pixels without stretching the fighter or changing her size.
+   const bleedLeft=({3:46,6:40,9:19,10:22})[i]||0;
+   const pxPerUnit=350/cw;
+   c.drawImage(art,col*cw-bleedLeft,row*ch,cw+bleedLeft,ch,
+     70-bleedLeft*pxPerUnit,60,350+bleedLeft*pxPerUnit,350);
+   // Conversely, the preceding poses contain a stray foot from the next cell.
+   // These masks are below/to the right of Coqui's actual body and tools.
+   if(i===2)c.clearRect(389,264,145,176);
+   if(i===6)c.clearRect(405,285,129,155);
    return canvas;
   });
   C.ready=true;C.illustration=art;
@@ -160,36 +170,60 @@ function backdrop(t){
  const g=ctx.createLinearGradient(0,0,960,540);
  g.addColorStop(0,'#153c58');g.addColorStop(.55,'#234e68');g.addColorStop(1,'#10172c');
  ctx.fillStyle=g;ctx.fillRect(0,0,960,540);
- ctx.fillStyle='#d1c2ab';ctx.fillRect(485,103,383,363);
- ctx.fillStyle='#8c857e';ctx.fillRect(485,103,383,14);
- for(let i=0;i<8;i++){ctx.strokeStyle='#ded3c0';ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(490,143+i*39);ctx.lineTo(868,143+i*39);ctx.stroke();}
- // Coqui paints the wall during the first phase.
- if(t>54){ctx.fillStyle='#fffef4';ctx.fillRect(496,118,Math.min(350,(t-54)*8),Math.min(328,180+Math.max(0,t-90)*5));}
+ // The opponent now occupies the right-hand side: no artificial wall or frame.
+ ctx.save();ctx.globalAlpha=.18;ctx.strokeStyle='#88c5dd';ctx.lineWidth=2;
+ for(let i=0;i<10;i++){
+  const x=55+i*103;ctx.beginPath();ctx.moveTo(x,465);ctx.lineTo(x+58,465);ctx.stroke();
+ }
+ ctx.restore();
  ctx.fillStyle='#172638';ctx.fillRect(0,465,960,75);
- ctx.strokeStyle='#6d9baf';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,465);ctx.lineTo(960,465);ctx.stroke();
- ctx.fillStyle='#4f6473';ctx.fillRect(46,421,73,43);ctx.fillRect(48,405,68,19);
- ctx.fillStyle='#e4e7e5';ctx.fillRect(60,409,44,9);
- // Assembled framing appears after the sanding step.
- if(t>240){ctx.save();ctx.globalAlpha=Math.min(1,(t-240)/22);
-  ctx.strokeStyle='#a6c2d3';ctx.lineWidth=11;
-  ctx.strokeRect(540,206,230,238);
-  for(let j=0;j<3;j++){ctx.beginPath();ctx.moveTo(590+j*64,208);ctx.lineTo(590+j*64,442);ctx.stroke();}
-  ctx.restore();}
+ ctx.strokeStyle='#6d9baf';ctx.lineWidth=3;
+ ctx.beginPath();ctx.moveTo(0,465);ctx.lineTo(960,465);ctx.stroke();
+ // Only a small paint bucket remains on the floor.
+ ctx.fillStyle='#4f6473';ctx.fillRect(125,421,46,44);
+ ctx.fillStyle='#e4e7e5';ctx.fillRect(130,418,36,10);
+}
+function opponentForCutscene(){
+ // In free practice there is no gameplay enemy. Show a VISUAL training partner
+ // (Lucas) so that Coqui doesn't attack an empty space; never inflict damage.
+ const b=C.victim;
+ return b&&Number.isInteger(b.id)&&atlasMap?.[b.id]?b:{id:3,practiceStandin:true};
 }
 function victim(t){
- const b=C.victim;if(!b||!atlasMap?.[b.id])return;
- const hit=t>=316&&C.hit&&C.defense!=='perfect';
+ const b=opponentForCutscene();
+ if(!atlasMap?.[b.id])return;
+ const hit=t>=316&&C.hit&&C.defense!=='perfect'&&!b.practiceStandin;
  const p=hit?Math.min(1,(t-316)/26):0;
- ctx.save();ctx.translate(760+(hit?p*56:0),464-(hit?Math.sin(p*Math.PI)*70:0));ctx.scale(-1,1);
- const m=hit?actionMap[b.id]:atlasMap[b.id];
- SpriteAtlas.draw(ctx,hit?actionAtlases[m[0]]:atlases[m[0]],m[1],hit?5:0,0,0,300);
+ const vx=752+(hit?p*65:0),vy=465-(hit?Math.sin(p*Math.PI)*72:0);
+ ctx.save();ctx.translate(vx,vy);ctx.scale(-1,1);
+ const reacting=(t>=120&&t<143)||(t>=215&&t<235);
+ const showHit=hit||reacting;
+ const m=showHit?actionMap[b.id]:atlasMap[b.id];
+ const sheet=showHit?actionAtlases[m[0]]:atlases[m[0]];
+ SpriteAtlas.draw(ctx,sheet,m[1],showHit?5:0,0,0,300);
  ctx.restore();
+ if(b.practiceStandin){
+  ctx.save();ctx.textAlign='center';ctx.fillStyle='#d4eeff';
+  ctx.font='bold 15px system-ui';ctx.fillText('RIVAL DE ENTRENAMIENTO',750,118);
+  ctx.restore();
+ }
+ // White paint now lands on the rival's torso and drips off them, not on a wall.
+ if(t>=119&&t<316){
+  const alpha=Math.min(.94,(t-119)/22+.18);
+  ctx.save();ctx.globalAlpha=alpha;
+  ctx.fillStyle='#fbfdff';ctx.strokeStyle='#bad2da';ctx.lineWidth=2;
+  const drops=[[733,255,12,19],[757,268,18,24],[784,250,12,15],
+   [738,305,9,26],[768,307,10,35],[792,283,6,16]];
+  for(const [x,y,rx,ry] of drops){
+   ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  }
+  ctx.restore();
+ }
 }
 function actor(t){
  if(!C.ready)prepare();
  const i=pose(t),dash=Math.max(0,Math.min(1,(t-278)/35));
- const x=170+(t>278?dash*140:0);
+ const x=258+(t>278?dash*175:0);
  ctx.save();ctx.translate(x,465);
  if(C.ready)ctx.drawImage(C.frames[i],-245,-410);
  else {
@@ -221,10 +255,16 @@ function cinematic(){
  const t=C.t;
  ctx.save();backdrop(t);
  victim(t);actor(t);
- if(t>=105&&t<155){let p=(t-105)/50;ctx.save();ctx.globalAlpha=Math.min(1,(1-p)*2);
-  splash(ctx,465+p*320,225,Math.floor(t/6));ctx.restore();}
- if(t>=194&&t<251){ctx.save();ctx.globalAlpha=Math.max(0,1-Math.max(0,t-231)/20);
-  dust(ctx,400+(t-194)*5,270,t);ctx.restore();}
+ if(t>=105&&t<155){
+  const p=(t-105)/50;
+  ctx.save();ctx.globalAlpha=Math.min(1,(1-p)*2);
+  splash(ctx,525+p*215,229+p*42,Math.floor(t/6));ctx.restore();
+ }
+ if(t>=194&&t<251){
+  const p=(t-194)/57;
+  ctx.save();ctx.globalAlpha=Math.max(0,1-Math.max(0,t-231)/20);
+  dust(ctx,530+p*220,267,t);ctx.restore();
+ }
  if(t>=282&&t<338){const p=(t-282)/56;
   ctx.save();ctx.translate(500+250*p,240);ctx.rotate(-.3+.8*p);
   profile(ctx,0,0,0);ctx.restore();}
