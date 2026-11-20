@@ -192,7 +192,8 @@ function opponentForCutscene(){
 function victim(t){
  const b=opponentForCutscene();
  if(!atlasMap?.[b.id])return;
- const hit=t>=316&&C.hit&&C.defense!=='perfect'&&!b.practiceStandin;
+ // The visual training partner reacts too, without receiving gameplay damage.
+ const hit=t>=316&&(C.hit||b.practiceStandin)&&C.defense!=='perfect';
  const p=hit?Math.min(1,(t-316)/26):0;
  const vx=752+(hit?p*65:0),vy=465-(hit?Math.sin(p*Math.PI)*72:0);
  ctx.save();ctx.translate(vx,vy);ctx.scale(-1,1);
@@ -242,7 +243,7 @@ function caption(t){
  if(t<243)return '¡POLVO POR TODAS PARTES!';
  if(t<267)return 'ARMANDO EL PERFIL...';
  if(t<310)return '¡TE VOY A REFORMAR!';
- if(C.miss)return '¡SE FUE DE MEDIDA!';
+ if(C.miss)return '¡ENSAYO TERMINADO!';
  if(C.defense==='perfect')return '¡DEFENSA PERFECTA!';
  return '¡REFORMA TERMINADA!';
 }
