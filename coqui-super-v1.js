@@ -1,5 +1,5 @@
-/* Coqui - REFORMAS A DOMICILIO. Cinematic EX with twelve composed
-   construction sprites, original Coqui face/body, timed defense and normal Flic Flac preserved. */
+/* Coqui - REFORMAS A DOMICILIO. Twelve bespoke full-body cartoon sprites,
+   timed defense, separate normal Flic Flac. coqui-reformas-poses-v2.js required. */
 (function(){
 'use strict';
 const C={active:false,t:0,length:354,speed:.82,actor:null,victim:null,frames:[],
@@ -114,24 +114,10 @@ function burst(c,x,y,phase){
 function prepare(){
  if(C.ready)return;
  try {
-  if(!atlases?.length||!actionAtlases?.length||!atlasMap?.[2]||!actionMap?.[2])return;
-  C.frames=Array.from({length:12},(_,i)=>{
-   const ca=document.createElement('canvas');ca.width=600;ca.height=440;
-   const c=ca.getContext('2d');
-   const normal=i===0||i===11;
-   const map=normal?atlasMap[2]:actionMap[2],sheet=normal?atlases[map[0]]:actionAtlases[map[0]];
-   const pose=normal?0:i<4?1:i<7?i%2+1:i<10?2:3;
-   SpriteAtlas.draw(c,sheet,map[1],pose,245,410,300);
-   if(i===1||i===2||i===3)roller(c,380,170-i%2*19,i===3?-.7:.10);
-   if(i===4||i===5||i===6)sander(c,400,255,i===6?-.45:.14);
-   if(i===7||i===8||i===9||i===10)profile(c,400,i===9?95:210,i===9?-.85:i===10?.3:-.3);
-   if(i===3)splash(c,510,205,0);
-   if(i===6)dust(c,480,240,i);
-   if(i===10)burst(c,515,185,0);
-   return ca;
-  });
-  C.ready=true;
- }catch(err){console.warn('[Coqui EX] Failed to build sprites',err);}
+  const frames=window.COQUI_REFORMAS_POSES?.build?.();
+  if(!frames||frames.length!==12)throw Error('Expected twelve original Coqui poses');
+  C.frames=frames;C.ready=true;
+ }catch(err){console.warn('[Coqui EX] Bespoke sprite atlas not ready',err);}
 }
 if(typeof assetReady!=='undefined')assetReady.then(prepare).catch(()=>{});
 function pose(t){
