@@ -1,0 +1,307 @@
+{
+  "version": "1.0",
+  "title": "Humor Negro",
+  "fighter": "Malefica",
+  "fighterId": 9,
+  "readiness": "VISUAL ASSETS ONLY - not yet executable as a super move",
+  "note": "All binary art is stored as line-wrapped Base64. Fetch, remove whitespace, then assign image.src='data:image/webp;base64,'+base64.",
+  "art": {
+    "poses": {
+      "file": "assets/malefica-humor-negro-poses.b64",
+      "encoding": "base64-webp",
+      "width": 1536,
+      "height": 1536,
+      "columns": 3,
+      "rows": 3,
+      "frames": [
+        {
+          "id": 0,
+          "name": "celular_lista",
+          "x": 0,
+          "y": 0,
+          "w": 512,
+          "h": 512
+        },
+        {
+          "id": 1,
+          "name": "lee_sticker",
+          "x": 512,
+          "y": 0,
+          "w": 512,
+          "h": 512
+        },
+        {
+          "id": 2,
+          "name": "sonrisa",
+          "x": 1024,
+          "y": 0,
+          "w": 512,
+          "h": 512
+        },
+        {
+          "id": 3,
+          "name": "contiene_risa",
+          "x": 0,
+          "y": 512,
+          "w": 512,
+          "h": 512
+        },
+        {
+          "id": 4,
+          "name": "carcajada",
+          "x": 512,
+          "y": 512,
+          "w": 512,
+          "h": 512
+        },
+        {
+          "id": 5,
+          "name": "aura_inicial",
+          "x": 1024,
+          "y": 512,
+          "w": 512,
+          "h": 512
+        },
+        {
+          "id": 6,
+          "name": "risa_maldita",
+          "x": 0,
+          "y": 1024,
+          "w": 512,
+          "h": 512
+        },
+        {
+          "id": 7,
+          "name": "proyecta_onda",
+          "x": 512,
+          "y": 1024,
+          "w": 512,
+          "h": 512
+        },
+        {
+          "id": 8,
+          "name": "explosion_oscura",
+          "x": 1024,
+          "y": 1024,
+          "w": 512,
+          "h": 512
+        }
+      ]
+    },
+    "effects": {
+      "file": "assets/malefica-humor-negro-fx.b64",
+      "encoding": "base64-webp",
+      "width": 1280,
+      "height": 960,
+      "columns": 4,
+      "rows": 3,
+      "frames": [
+        {
+          "id": 0,
+          "name": "onda_risa_1",
+          "x": 0,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 1,
+          "name": "onda_risa_2",
+          "x": 320,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 2,
+          "name": "onda_risa_3",
+          "x": 640,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 3,
+          "name": "explosion_1",
+          "x": 960,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 4,
+          "name": "explosion_2",
+          "x": 0,
+          "y": 320,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 5,
+          "name": "explosion_3",
+          "x": 320,
+          "y": 320,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 6,
+          "name": "escudo_defensa_1",
+          "x": 640,
+          "y": 320,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 7,
+          "name": "escudo_defensa_2",
+          "x": 960,
+          "y": 320,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 8,
+          "name": "escudo_defensa_3",
+          "x": 0,
+          "y": 640,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 9,
+          "name": "disipacion_1",
+          "x": 320,
+          "y": 640,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 10,
+          "name": "disipacion_2",
+          "x": 640,
+          "y": 640,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "id": 11,
+          "name": "disipacion_3",
+          "x": 960,
+          "y": 640,
+          "w": 320,
+          "h": 320
+        }
+      ]
+    },
+    "stickerCloseup": {
+      "file": "assets/malefica-humor-negro-sticker.b64",
+      "encoding": "base64-webp",
+      "caption": "LINDO DIA PARA CLAVARSE UNA FRIA",
+      "chatLaugh": "Jajajajajajajaja"
+    }
+  },
+  "suggestedCinematic": [
+    {
+      "start": 0,
+      "end": 50,
+      "name": "Takes phone out",
+      "pose": 0
+    },
+    {
+      "start": 50,
+      "end": 95,
+      "name": "Close-up sticker and WhatsApp message",
+      "pose": 1,
+      "cutscene": "stickerCloseup"
+    },
+    {
+      "start": 95,
+      "end": 128,
+      "name": "Starts smiling and laughing",
+      "pose": 3
+    },
+    {
+      "start": 128,
+      "end": 167,
+      "name": "Diabolical laughter and dark aura",
+      "pose": 4,
+      "effect": "onda_risa_1"
+    },
+    {
+      "start": 167,
+      "end": 204,
+      "name": "First cursed laughter wave",
+      "pose": 6,
+      "effect": "onda_risa_1"
+    },
+    {
+      "start": 205,
+      "end": 242,
+      "name": "Second cursed laughter wave",
+      "pose": 6,
+      "effect": "onda_risa_2"
+    },
+    {
+      "start": 243,
+      "end": 279,
+      "name": "Third cursed laughter wave",
+      "pose": 7,
+      "effect": "onda_risa_3"
+    },
+    {
+      "start": 280,
+      "end": 320,
+      "name": "Final dark explosion and opponent hit",
+      "pose": 8,
+      "effect": "explosion_3"
+    }
+  ],
+  "defense": {
+    "title": "No te rías - tres parries a las ondas malditas",
+    "input": "defend",
+    "controls": {
+      "mobile": "🛡 DEFENSA",
+      "keyboard": "defend key",
+      "ps4": "guard button",
+      "joycon": "guard button"
+    },
+    "windows": [
+      {
+        "centerFrame": 178,
+        "halfWidth": 8
+      },
+      {
+        "centerFrame": 217,
+        "halfWidth": 8
+      },
+      {
+        "centerFrame": 256,
+        "halfWidth": 8
+      }
+    ],
+    "rule": "One press in each timed window; holding guard without a timed press does not count",
+    "fullSuccess": {
+      "hits": 3,
+      "damageMultiplier": 0,
+      "text": "¡Te cabió! Defensa perfecta",
+      "effect": "disipacion_3"
+    },
+    "partialSuccess": {
+      "hits": "1 or 2",
+      "damageMultiplier": 0.5,
+      "effect": "escudo_defensa_2"
+    },
+    "failure": {
+      "hits": 0,
+      "damageMultiplier": 1
+    },
+    "visualOverlay": "The shield sprites layer over the actual opponent; no hardcoded rival image"
+  },
+  "requirements": [
+    "Respect fixed fighter scale and baseline",
+    "Use separate portrait cinematic and battle sprites",
+    "Do not replace the fighter's existing normal special",
+    "Must implement and playtest before enabling in production"
+  ]
+}
