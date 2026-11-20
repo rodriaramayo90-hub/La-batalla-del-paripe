@@ -1,4 +1,4 @@
-/* Coqui - REFORMAS A DOMICILIO. Twelve bespoke full-body cartoon sprites,
+/* Coqui - REFORMAS A DOMICILIO. Twelve illustrated full-body WebP frames with vector sprite fallback,
    timed defense, separate normal Flic Flac. coqui-reformas-poses-v2.js required. */
 (function(){
 'use strict';
@@ -120,6 +120,35 @@ function prepare(){
  }catch(err){console.warn('[Coqui EX] Bespoke sprite atlas not ready',err);}
 }
 if(typeof assetReady!=='undefined')assetReady.then(prepare).catch(()=>{});
+/* Illustrated 4x3 transparent WebP atlas, baked into a GitHub-safe .b64 text asset.
+   The v2 vector full-body sprites above remain a fallback if image decode fails. */
+fetch('assets/coqui-reformas-atlas-v2.b64?v=2').then(r=>{
+ if(!r.ok)throw Error('Coqui illustrated poses HTTP '+r.status);
+ return r.text();
+}).then(raw=>{
+ const code=raw.replace(/\s/g,'');
+ if(!code.startsWith('UklGR'))throw Error('Invalid Coqui WebP atlas');
+ const art=new Image();
+ art.onload=()=>{
+  if(art.naturalWidth<900||art.naturalHeight<675){
+   console.warn('[Coqui EX] Incorrect atlas geometry',art.naturalWidth,art.naturalHeight);
+   return;
+  }
+  C.frames=Array.from({length:12},(_,i)=>{
+   const canvas=document.createElement('canvas');
+   canvas.width=600;canvas.height=440;
+   const c=canvas.getContext('2d');
+   const cw=art.naturalWidth/4,ch=art.naturalHeight/3;
+   // Anchoring all twelve 350 px drawings to the same floor baseline.
+   c.drawImage(art,(i%4)*cw,Math.floor(i/4)*ch,cw,ch,70,60,350,350);
+   return canvas;
+  });
+  C.ready=true;C.illustration=art;
+ };
+ art.onerror=()=>console.warn('[Coqui EX] Illustrated atlas decode failed, vector sprites used');
+ art.src='data:image/webp;base64,'+code;
+}).catch(e=>console.warn('[Coqui EX] Illustrated atlas unavailable, vector sprites used',e));
+
 function pose(t){
  if(t<24)return 0;if(t<52)return 1;if(t<91)return 2;
  if(t<144)return 3;if(t<166)return 4;
