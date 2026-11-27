@@ -113,11 +113,19 @@ const database=openDatabase();
 function cacheGet(key){
  return database.then(db=>new Promise(resolve=>{
   if(!db)return resolve(null);
+  // Cached storage is optional. A stalled Safari/private-mode transaction
+  // must never hold up the game loading screen.
+  let finished=false;
+  const finish=value=>{
+   if(finished)return;
+   finished=true;clearTimeout(timeout);resolve(value);
+  };
+  const timeout=setTimeout(()=>finish(null),500);
   try{
    const request=db.transaction('atlases','readonly').objectStore('atlases').get(key);
-   request.onsuccess=()=>resolve(request.result||null);
-   request.onerror=()=>resolve(null);
-  }catch(_){resolve(null)}
+   request.onsuccess=()=>finish(request.result||null);
+   request.onerror=()=>finish(null);
+  }catch(_){finish(null)}
  }));
 }
 function cachePut(key,value){
