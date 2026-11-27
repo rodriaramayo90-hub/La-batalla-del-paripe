@@ -77,3 +77,11 @@ representa ni afirma detalles de un expediente policial real.
 
 Para verificar la implementación: ejecutar \`npm test\` y comprobar los tres
 desenlaces en un navegador con los controles físicos correspondientes.
+
+## V2 — cinematic art upgrade
+
+- `flor-airport-art-v2.js`: two **separately illustrated Swiss police sprites** with distinct faces, uniforms, gestures and dynamic pose animation. The actors are cached as high-detail vector images and only decoded once; pose fallback remains available.
+- Painted airport terminal with mountains, windows, distant travelers, reflected tile floor and moving runway traffic.
+- `flor-airport-props-v2.js`: shaded X-ray scanner, three-dimensional moving conveyor, illustrated passport, perfume, hairdryer, fernet and cheese. Fully self-contained SVG/data images, with no external hosts.
+- Flor and rival still use the original `SpriteAtlas` so facial identity and on-screen sizes remain stable. Camera zoom, comic action rays, animated impact particles and improved police choreography now match the game's EX visual language.
+- The three QTE endings, 48/24/0% damage and timings are **unchanged**. Loading errors automatically fall back to the original V1 art.

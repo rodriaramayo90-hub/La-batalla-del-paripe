@@ -120,7 +120,7 @@ function fullGame(){
  const context=vm.createContext(sandbox);
  const modules=['trex-super-v1.js','drapie-super-v1.js','alcahueta-super-v1.js',
   'berga-super-v1.js','malefica-super-v1.js','coqui-super-v1.js','flor-super-v1.js'];
- for(const file of ['super-manager-v1.js','flor-airport-art-v1.js',...modules])
+ for(const file of ['super-manager-v1.js','flor-airport-art-v1.js','flor-airport-art-v2.js','flor-airport-props-v2.js',...modules])
   vm.runInContext(read(file),context,{filename:file,timeout:3000});
  return sandbox;
 }

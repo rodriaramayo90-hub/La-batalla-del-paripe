@@ -566,3 +566,6 @@ button.tournament-control-icon { cursor: pointer; }
 /* SÚPER EX Flor Rubia — Zúrich: consistent warm amber with Swiss-red passport glow. */
 .flor-super-ready{outline:3px solid #fff3bd!important;box-shadow:0 0 17px 5px #ef3453,inset 0 0 13px #ffe4a0!important;animation:florExPassportPulse .82s ease-in-out infinite alternate}
 @keyframes florExPassportPulse{from{filter:brightness(1)}to{filter:brightness(1.48)}}
+
+/* V2 Swiss customs cinematic rendering uses higher-detail pre-rendered vector pose assets. */
+.flor-super-ready{filter:drop-shadow(0 0 4px #ffe2aa)}

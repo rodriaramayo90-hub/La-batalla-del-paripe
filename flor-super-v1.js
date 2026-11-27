@@ -158,7 +158,7 @@ function drawOpponent(t,verdict){
    x=766;feet=464;
   }else if(t<353){
    const p=smooth((t-292)/55);
-   x=766-p*134;size=315*(1-p*.45);feet=464;
+   x=766-p*134;size=315;feet=464;
    alpha=1-p*.30;angle=-p*.20;
   }else if(t<380){
    alpha=0; // Inside the suitcase; the actual rival returns in the crash.
@@ -189,23 +189,76 @@ function drawOpponent(t,verdict){
  }
 }
 function drawCops(t,verdict){
- const firstX=t<33?520+Math.sin(t*.06)*9:499;
- const secondX= t<26?1100-(t/26)*425:667;
- let p1=t<30?0:t<75?1:t<147?2:t<298?1:3;
- let p2=t<75?0:t<147?2:t<298?1:3;
- let x1=firstX,x2=secondX;
+ const walking=t<30;
+ let x1=walking?550-51*smooth(t/30):499;
+ let x2=walking?975-308*smooth(t/30):667;
+ const p1=t<30?8:t<76?1:t<147?2:t<173?5:t<288?4:7;
+ const p2=t<30?8:t<73?0:t<147?2:t<174?6:t<288?2:7;
+ let pose1=p1,pose2=p2;
  if(t>=291){
-  const v=smooth((t-291)/47);
+  const progress=smooth((t-291)/47);
   if(verdict==='perfect'){
-   x1=499+v*30;x2=667+v*188;
-   p1=3;p2=3;
+   x1=499+30*progress;x2=667+188*progress;
+   pose1=t<315?6:3;pose2=t<315?7:3;
   }else{
-   x1=499+v*45;x2=667+v*102;
-   p1=t<336?3:4;p2=3;
+   x1=499+45*progress;x2=667+102*progress;
+   pose1=t<315?5:t<341?7:3;
+   pose2=t<318?7:t<350?3:4;
   }
  }
- A.officer(ctx,x1,456,.72,p1,false);
- A.officer(ctx,x2,456,.71,p2,true);
+ const firstBob=walking?Math.sin(t*.21)*4:0;
+ const secondBob=walking?Math.sin(t*.19+2)*4:0;
+ A.officer(ctx,x1,456+firstBob,.77,pose1,false,0,t);
+ A.officer(ctx,x2,456+secondBob,.75,pose2,true,1,t);
+}
+function drawCinematicFX(t,verdict){
+ const beats=[34,76,151,171,291,343,380];
+ let pulse=0;
+ for(const at of beats){
+  const d=t-at;
+  if(d>=0&&d<=13)pulse=Math.max(pulse,(1-d/13)*(at===151||at===380?1:.6));
+ }
+ if(pulse){
+  ctx.save();
+  ctx.globalAlpha=Math.min(.33,pulse*.27);
+  ctx.fillStyle=t>=291&&verdict==='perfect'?'#9effce':'#fff9dc';
+  ctx.fillRect(0,0,960,540);
+  ctx.restore();
+ }
+ if(t>=147&&t<172){
+  const p=(t-147)/25;
+  ctx.save();ctx.translate(491,271);
+  ctx.globalAlpha=Math.max(0,1-p);
+  for(let i=0;i<18;i++){
+   const a=i*Math.PI/9,r=150+(i%3)*16;
+   ctx.strokeStyle=i%2?'#fffbd9':'#ef4e67';
+   ctx.lineWidth=i%3?5:9;
+   ctx.beginPath();ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+   ctx.lineTo(Math.cos(a)*(r+150+p*240),Math.sin(a)*(r+150+p*240));
+   ctx.stroke();
+  }
+  ctx.restore();
+ }
+ if(t>=364&&t<411&&verdict!=='perfect'){
+  const p=(t-364)/47;
+  ctx.save();ctx.globalAlpha=(1-p)*.67;
+  for(let i=0;i<22;i++){
+   const a=i*2.3999,r=(i%2?70:120)+p*160;
+   ctx.fillStyle=i%3===0?'#ffeaa7':i%3===1?'#ff8b67':'#fffefa';
+   ctx.beginPath();ctx.arc(822+Math.cos(a)*r,321+Math.sin(a)*r,2+i%4,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+ }
+ if(t>0&&t<27){
+  const a=1-t/27;
+  ctx.save();ctx.globalAlpha=a*.47;ctx.fillStyle='#06132d';
+  ctx.fillRect(0,0,960,540);
+  ctx.globalAlpha=a;ctx.textAlign='center';
+  ctx.font='italic 900 61px system-ui';ctx.lineWidth=12;
+  ctx.strokeStyle='#09152d';ctx.strokeText('¡DETENIDA EN ZÚRICH!',480,280);
+  ctx.fillStyle='#ffebae';ctx.fillText('¡DETENIDA EN ZÚRICH!',480,280);
+  ctx.restore();
+ }
 }
 function drawFlorActor(t,verdict){
  let x=224,feet=465,rotation=0,pose=0;
@@ -299,6 +352,12 @@ function cinematic(){
  ctx.save();
  const fade=t<12?t/12:t>418?(432-t)/14:1;
  ctx.globalAlpha*=cap(fade);
+ // Camera moves with the actors, but HUD and timed passport prompts
+ // remain stable in screen coordinates for reliable controller timing.
+ const accent=t>=147&&t<169?Math.sin(Math.PI*(t-147)/22)*.15:0;
+ const zoom=1+accent+(t>=291&&t<378?.045*smooth((t-291)/33):0);
+ ctx.save();
+ ctx.translate(480,270);ctx.scale(zoom,zoom);ctx.translate(-480,-270);
  A.background(ctx,t);
  if(t>=288){
   A.conveyor(ctx,t);
@@ -308,6 +367,8 @@ function cinematic(){
  drawOpponent(t,verdict);
  drawCops(t,verdict);
  bagAction(t,verdict);
+ ctx.restore(); // The animated scene ends here: draw text and QTE at fixed size.
+ drawCinematicFX(t,verdict);
  if(t>=170&&t<290)A.prompt(ctx,t,verdict);
  dialogue(t,verdict);
  // Cinematic matte / captions: these stay above the moving actors and scenery.
