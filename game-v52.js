@@ -35,7 +35,10 @@ let assetsLoaded=false;
 const assetReady=Promise.all(allImages.map(im=>im.decode())).then(async()=>{
  configureCharacterSprites();
  const reports=await SpriteAtlas.prepare([...atlases,...actionAtlases,...specials,...finisherAtlases,...maskedSheets,...grappleSheets,heldSheet,...victorySheets,...lucasArt,...fallArt,...heldStages,phoneArt,maskStages,...drapieOutfitArt]);
- if(reports.some(report=>report.fallback))throw new Error('Sprite atlas extraction incomplete');
+ // A malformed frame must not prevent everyone else from playing: the
+ // atlas renderer now falls back to the original grid for that sheet.
+ const fallbackSheets=reports.filter(report=>report.fallback);
+ if(fallbackSheets.length)console.warn('[SpriteAtlas] Using grid fallback for incomplete sheets',fallbackSheets);
  prepareDrapieShot();normalizePhonePoses();crouchCells=combatSheet(crouchArt);lowPunchCells=combatSheet(lowPunchArt);lowKickCells=combatSheet(lowKickArt);prepareKnockdownBounds();prepareMaskedFloorBounds();prepareHeldPoseBounds();prepareFallBounds();assetsLoaded=true;return true;
 });assetReady.catch(()=>{});
 const atlasMap=[[0,0],[0,1],[1,0],[0,2],[1,1],[1,2],[2,0],[0,3],[2,1],[1,3],[2,2],[2,3]];
