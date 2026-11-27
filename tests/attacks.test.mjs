@@ -33,7 +33,7 @@ function fixture(type,{practice=false,actorSlot=0}={}){
  const env={
   window:null,document,
   player:main,enemy:second,practice,mode:'game',
-  ONLINE:{active:false},LOCAL:{active:actorSlot===1,paused:false},
+  ONLINE:{active:false},LOCAL:{active:!practice,paused:false},
   PAD:{soloPause:false},SECOND:{actions:[]},
   ending:false,introFrames:0,projectileClash:null,
   castSerial:0,MAX_HP:220,shake:0,hitstop:0,score:0,
