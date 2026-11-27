@@ -4,7 +4,7 @@ const SECOND={keys:{},actions:[],charges:new Map(),lastTap:{left:-10000,right:-1
 let HUMAN_JUMP=null;
 const HUMAN_SOURCES=[new Map(),new Map()];
 const SECOND_MAPPING={KeyA:'left',KeyD:'right',KeyW:'jump',KeyS:'down',KeyZ:'punch',KeyX:'kick',KeyC:'special',KeyV:'defend',KeyB:'grab'};
-function resetHumanInputs(){HUMAN_JUMP=null;if(player)player.parryWindow=0;if(enemy)enemy.parryWindow=0;lastTap.left=lastTap.right=-10000;SECOND.jumpTap=null;for(const map of HUMAN_SOURCES)map.clear();SECOND.keys={};SECOND.actions=[];SECOND.charges.clear();SECOND.lastTap={left:-10000,right:-10000};}
+function resetHumanInputs(){window.SUPER_DEFENSE?.clearInput();HUMAN_JUMP=null;if(player)player.parryWindow=0;if(enemy)enemy.parryWindow=0;lastTap.left=lastTap.right=-10000;SECOND.jumpTap=null;for(const map of HUMAN_SOURCES)map.clear();SECOND.keys={};SECOND.actions=[];SECOND.charges.clear();SECOND.lastTap={left:-10000,right:-10000};}
 function cancelSecondCharges(){SECOND.charges.clear();}
 function localKeyboardAllowed(slot){return !LOCAL.active||LOCAL.controls[slot]==='keyboard';}
 function handleHumanKeyDown(e){
@@ -21,6 +21,9 @@ function handleHumanKeyUp(e){
 function humanInput(slot,key,pressed,source){
  if(mode==='game'&&projectileClash){if(pressed&&key==='punch')clashTap(slot);return;}
  if(mode!=='game'||slot===1&&!LOCAL.active||LOCAL.paused||PAD.soloPause)return;
+ // Shared source of truth for ordinary blocking and cinematic QTEs.
+ // Player ownership is already resolved here for keyboard, pads and touch.
+ window.SUPER_DEFENSE?.input(slot,key,pressed,source);
  const a=slot===0?player:enemy;if(!a)return;const state=slot===0?keys:SECOND.keys;
  if(['punch','kick'].includes(key)){
   if(slot===0){if(pressed)beginCharge(key,source);else releaseCharge(source);}
