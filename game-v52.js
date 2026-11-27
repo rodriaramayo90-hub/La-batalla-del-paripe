@@ -310,13 +310,18 @@ for(const b of document.querySelectorAll('[data-key]')){
  const key=b.dataset.key;b.addEventListener('contextmenu',e=>e.preventDefault());
  b.addEventListener('pointerdown',e=>{
   e.preventDefault();if(mode!=='game')return;unlockAudio();
+  // Punch/kick/special touch buttons bypass humanInput in the base game;
+  // forward their normalized edges for Drapie's QTE as well.
+  if(['punch','kick','special'].includes(key))window.SUPER_DEFENSE?.input(0,key,true,'pointer-'+e.pointerId);
   b.classList.add('pressed');
   if(['punch','kick'].includes(key)){beginCharge(key,'pointer-'+e.pointerId);haptic(8)}else if(key==='special'){bufferAction(key);haptic(8)}
   else{holdButtons.set(e.pointerId,key);humanInput(0,key,true,'pointer-'+e.pointerId);}
   try{b.setPointerCapture(e.pointerId)}catch{}
  });
  for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,e=>{
-  e.preventDefault();b.classList.remove('pressed');releaseCharge('pointer-'+e.pointerId,type!=='pointerup');
+  e.preventDefault();b.classList.remove('pressed');
+  if(['punch','kick','special'].includes(key))window.SUPER_DEFENSE?.input(0,key,false,'pointer-'+e.pointerId);
+  releaseCharge('pointer-'+e.pointerId,type!=='pointerup');
   if(holdButtons.get(e.pointerId)===key){holdButtons.delete(e.pointerId);humanInput(0,key,false,'pointer-'+e.pointerId)}
  });
 }
