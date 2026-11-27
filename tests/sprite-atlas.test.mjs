@@ -7,7 +7,7 @@ import vm from 'node:vm';
 
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const SPRITES=readFileSync(resolve(ROOT,'sprite-import-v49.js'),'utf8');
-const LEGACY=readFileSync(resolve(ROOT,'sprite-import-v48.js'),'utf8');
+const LEGACY=readFileSync(resolve(ROOT,'tests/fixtures/sprite-import-v48.js'),'utf8');
 class FakeCanvas{
  constructor(w=0,h=0){this._width=w;this._height=h;this.data=new Uint8ClampedArray(w*h*4);}
  get width(){return this._width}
