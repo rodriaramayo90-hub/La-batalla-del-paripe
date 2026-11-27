@@ -9,6 +9,7 @@ const VALID=new Set(['defend','punch','kick','special','jump']);
 const SEQUENCES={
  coqui:[127,215,304],
  malefica:[178,217,256],
+ flor:[188,229,269],
  alca:[126,184]
 };
 function defenderSlot(){
@@ -41,7 +42,8 @@ function input(slot,action,isDown,source){
 function clearInput(){D.pressed.clear();D.held.clear();}
 function start(type,a,b){
  D.current={type,a,b,t:0,success:0,step:0,errors:0,marks:new Set(),
-  done:false,seq:['punch','kick','special','jump']};
+  done:false,failedMarks:new Set(),
+  seq:type==='flor'?['punch','kick','special']:['punch','kick','special','jump']};
  // Do NOT clear physical holds: pressing defense before the super starts is
  // not a new successful block; the player must release and press again.
  D.pressed.clear();
@@ -57,6 +59,22 @@ function tick(type,t){
   for(const [i,at] of SEQUENCES[type].entries()){
    if(!d.marks.has(i)&&Math.abs(t-at)<=threshold&&keys.has('defend')){
     d.marks.add(i);d.success++;
+   }
+  }
+ }
+ // Swiss passport control: three SEPARATE timed action checks.
+ // Pressing all three together or a wrong key fails the current checkpoint.
+ // A held button never advances a second checkpoint (input() debounces it).
+ if(type==='flor'){
+  const sequence=SEQUENCES.flor;
+  for(let i=0;i<sequence.length;i++){
+   const at=sequence[i];
+   if(d.marks.has(i)||d.failedMarks.has(i))continue;
+   if(Math.abs(t-at)>12||keys.size===0)continue;
+   if(keys.size===1&&keys.has(d.seq[i])){
+    d.marks.add(i);d.success++;
+   }else{
+    d.failedMarks.add(i);d.errors++;
    }
   }
  }
@@ -82,6 +100,8 @@ function result(type){
  if(!d||d.type!==type)return 'fail';
  if(type==='coqui'||type==='malefica')
   return d.success===3?'perfect':d.success>=1?'partial':'fail';
+ if(type==='flor')
+  return d.success===3&&d.errors===0?'perfect':d.success>=1?'partial':'fail';
  if(type==='berga'||type==='trex')
   return d.success===2?'perfect':d.success===1?'partial':'fail';
  if(type==='alca')
@@ -111,6 +131,20 @@ function draw(type,c,t){
  }else if(type==='coqui'&&t>=105&&t<316){
   msg='🛡 DEFENDÉ: PINTURA, POLVO Y PERFIL (3 VECES)';
   progress=[0,1,2].map(i=>d.marks.has(i)?'✓':'○').join('    ');
+ }else if(type==='flor'&&t>=159&&t<288){
+  const codes=['□','△','○'],names=['GOLPE','PATADA','ESPECIAL'];
+  const times=SEQUENCES.flor;
+  let active=times.findIndex((at,i)=>t>=at-22&&t<=at+12
+   &&!d.marks.has(i)&&!d.failedMarks.has(i));
+  if(active<0)active=times.findIndex((at,i)=>t<at-22
+   &&!d.marks.has(i)&&!d.failedMarks.has(i));
+  msg=active>=0
+   ?'PASAPORTE '+(active+1)+'/3: '+codes[active]+'  '+names[active]
+   :'CONTROL DE PASAPORTE COMPLETADO';
+  progress=codes.map((code,i)=>
+    d.marks.has(i)?'✓ '+code:d.failedMarks.has(i)?'✕ '+code:
+    code+' '+(t>=times[i]-12&&t<=times[i]+12?'¡YA!':'○')
+  ).join('      ');
  }else if(type==='berga'&&t>=225&&t<277){
   msg='🛡 ¡DEFENDÉ JUSTO ANTES DEL ATROPELLO!';
   progress=d.success?'✓':'';

@@ -1,7 +1,7 @@
 # Production layout — La batalla del paripé
 
 The GitHub Pages entry point is \`index.html\`. It loads **one external stylesheet**
-(\`game.css\`) and the 34 live JavaScript modules in their original dependency
+(\`game.css\`) and the 36 live JavaScript modules in their original dependency
 order. \`game.css\` is an exact ordered concatenation of the previously loaded
 13 CSS files and four inline style blocks. The CSS source comments label every
 original segment for future maintenance; the cascade order has not changed.

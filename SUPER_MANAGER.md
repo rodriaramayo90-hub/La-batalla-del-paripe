@@ -40,7 +40,7 @@ del registro. La selección de personajes compatibles en entrenamiento
 consulta automáticamente \`SUPER_MANAGER.supports(id)\`.
 
 **No se ha cambiado** el daño, las ventanas defensivas, la duración,
-los recursos artísticos ni los nombres de los seis súper existentes.
+los recursos artísticos ni los nombres de los siete súper existentes.
 
 ## Compatibilidad
 

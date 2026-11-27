@@ -17,9 +17,9 @@ test('All active JavaScript files parse and linked scripts/stylesheets exist',()
 });
 
 test('All six cinematic supers start shared defenses and apply damage multipliers',()=>{
- const types=['trex','drapie','alca','berga','malefica','coqui'];
+ const types=['trex','drapie','alca','berga','malefica','coqui','flor'];
  const paths=['trex-super-v1.js','drapie-super-v1.js','alcahueta-super-v1.js',
-  'berga-super-v1.js','malefica-super-v1.js','coqui-super-v1.js'];
+  'berga-super-v1.js','malefica-super-v1.js','coqui-super-v1.js','flor-super-v1.js'];
  for(let i=0;i<paths.length;i++){
   const src=read(paths[i]);
   assert.ok(src.includes("SUPER_DEFENSE?.start('"+types[i]+"'"),paths[i]+' must start cinematic defense');

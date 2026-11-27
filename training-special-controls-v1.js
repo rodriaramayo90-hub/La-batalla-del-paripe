@@ -129,7 +129,7 @@ humanInput=function(slot,key,pressed,source){
 function refreshPracticeUI(){
  const active=inTraining(),available=active&&supported(player?.id);
  superButton.disabled=!isReady();
- superButton.title=!available?'Súper EX: Alcahueta, T-Rex, Coqui, Dra. En Berga, La Drapie y Maléfica':'Súper EX · U · PS4 R2 + ○';
+ superButton.title=!available?'Súper EX: Alcahueta, T-Rex, Coqui, Dra. En Berga, La Drapie, Maléfica y Flor Rubia':'Súper EX · U · PS4 R2 + ○';
  if(!active){
   if(LOCAL.active){
    const normal=document.querySelector('#game [data-key="special"]');
@@ -148,7 +148,7 @@ function refreshPracticeUI(){
  }
  const normal=document.querySelector('#game [data-key="special"]');
  if(normal){
-  normal.classList.remove('trex-super-ready','drapie-super-ready','alca-super-ready','malefica-super-ready','coqui-super-ready');
+  normal.classList.remove('trex-super-ready','drapie-super-ready','alca-super-ready','malefica-super-ready','coqui-super-ready','flor-super-ready');
   const small=normal.querySelector('small');
   if(small)small.textContent='ESPECIAL';
   normal.setAttribute('aria-label','Especial normal');

@@ -176,3 +176,50 @@ test('Attacker actions cannot fake the opponent’s timed defense',()=>{
  f.press(1,'defend','key-V');f.tick('berga',270);
  assert.equal(f.result('berga'),'perfect');
 });
+
+
+test('Flor Swiss passport PS4 □ △ ○ must be pressed separately at three beeps',()=>{
+ const f=makeFixture(),p=pad('Wireless Controller (054c)');f.pads.push(p);
+ f.start('flor');
+ for(const [button,t] of [[2,188],[3,229],[1,269]])padTap(f,p,button,'flor',t);
+ assert.equal(f.result('flor'),'perfect');
+ assert.equal(f.ctx.SUPER_DEFENSE.multiplier('flor'),0);
+});
+test('Flor passport also supports horizontally held Joy-Cons',()=>{
+ for(const [id,mapping,buttons] of [
+  ['Joy-Con (L)','',[1,0,2]],['Joy-Con (R)','standard',[2,3,1]]
+ ]){
+  const f=makeFixture(),p=pad(id,0,mapping);f.pads.push(p);
+  f.start('flor');
+  for(let i=0;i<3;i++)padTap(f,p,buttons[i],'flor',[188,229,269][i]);
+  assert.equal(f.result('flor'),'perfect',id);
+ }
+});
+test('Flor passport supports touch attack buttons for mobile',()=>{
+ const f=makeFixture(),core=read('game-v52.js');
+ const a=core.indexOf('const holdButtons=new Map();'),b=core.indexOf('const mapping=',a);
+ f.evaluate(core.slice(a,b));
+ f.start('flor');
+ for(const [key,t] of [['punch',188],['kick',229],['special',269]]){
+  touch(f,key,'pointerdown',t);f.tick('flor',t);touch(f,key,'pointerup',t);
+ }
+ assert.equal(f.result('flor'),'perfect');
+});
+test('Flor passport respects player-two keyboard Z X C and rejects player-one keys',()=>{
+ const f=makeFixture(true);f.start('flor',1);
+ f.press(0,'punch','key-J');f.tick('flor',188);
+ assert.equal(f.result('flor'),'fail');
+ f.press(1,'kick','key-X');f.tick('flor',229);
+ f.release(1,'kick','key-X');
+ f.press(1,'special','key-C');f.tick('flor',269);
+ assert.equal(f.result('flor'),'partial');
+});
+test('Flor passport rejects wrong or simultaneous button presses and held action spam',()=>{
+ const f=makeFixture();f.start('flor');
+ f.press(0,'punch','key-J');f.press(0,'kick','key-K');f.tick('flor',188);
+ f.release(0,'punch','key-J');f.release(0,'kick','key-K');
+ f.press(0,'kick','key-K');f.tick('flor',229);
+ f.tick('flor',269); // Held kick is NOT a fresh special press.
+ assert.equal(f.result('flor'),'partial');
+ assert.equal(f.ctx.SUPER_DEFENSE.multiplier('flor'),.5);
+});

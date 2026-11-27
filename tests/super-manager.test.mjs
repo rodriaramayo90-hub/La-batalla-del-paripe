@@ -75,9 +75,9 @@ test('Manager rejects duplicate or malformed registrations',()=>{
  assert.throws(()=>f.s.SUPER_MANAGER.register(make(2,'trex')),/Duplicate/);
  assert.throws(()=>f.s.SUPER_MANAGER.register({fighterId:4,key:'x'}),/Invalid/);
 });
-test('All six production supers register instead of overwriting global lifecycle functions',()=>{
+test('All seven production supers register instead of overwriting global lifecycle functions',()=>{
  const scripts=['trex-super-v1.js','drapie-super-v1.js','alcahueta-super-v1.js',
-  'berga-super-v1.js','malefica-super-v1.js','coqui-super-v1.js'];
+  'berga-super-v1.js','malefica-super-v1.js','coqui-super-v1.js','flor-super-v1.js'];
  for(const path of scripts){
   const source=read(path);
   assert.match(source,/SUPER_MANAGER\.register\(/,'Missing registration in '+path);
@@ -119,15 +119,15 @@ function fullGame(){
  sandbox.window=sandbox;
  const context=vm.createContext(sandbox);
  const modules=['trex-super-v1.js','drapie-super-v1.js','alcahueta-super-v1.js',
-  'berga-super-v1.js','malefica-super-v1.js','coqui-super-v1.js'];
- for(const file of ['super-manager-v1.js',...modules])
+  'berga-super-v1.js','malefica-super-v1.js','coqui-super-v1.js','flor-super-v1.js'];
+ for(const file of ['super-manager-v1.js','flor-airport-art-v1.js',...modules])
   vm.runInContext(read(file),context,{filename:file,timeout:3000});
  return sandbox;
 }
-test('All six real supers initialize, run a tick, and reset through one dispatcher',()=>{
+test('All seven real supers initialize, run a tick, and reset through one dispatcher',()=>{
  const s=fullGame();
  const roster=[[1,'trex'],[6,'drapie'],[0,'alca'],[5,'berga'],
-  [9,'malefica'],[2,'coqui']];
+  [9,'malefica'],[2,'coqui'],[7,'flor']];
  assert.deepEqual(Array.from(s.SUPER_MANAGER.list(),m=>m.key),roster.map(x=>x[1]));
  for(const [id,key] of roster){
   s.player=hero(id);s.enemy=hero(3,730);
