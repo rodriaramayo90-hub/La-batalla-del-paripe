@@ -7,6 +7,7 @@ import vm from 'node:vm';
 
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const SPRITES=readFileSync(resolve(ROOT,'sprite-import-v49.js'),'utf8');
+const LEGACY=readFileSync(resolve(ROOT,'sprite-import-v48.js'),'utf8');
 class FakeCanvas{
  constructor(w=0,h=0){this._width=w;this._height=h;this.data=new Uint8ClampedArray(w*h*4);}
  get width(){return this._width}
@@ -25,6 +26,7 @@ class FakeContext{
   this.calls.push({image,args});
   let sx=0,sy=0,sw=image.width,sh=image.height,dx=0,dy=0,dw=sw,dh=sh;
   if(args.length===2){[dx,dy]=args;}
+  else if(args.length===4){[dx,dy,dw,dh]=args;}
   else if(args.length===8){[sx,sy,sw,sh,dx,dy,dw,dh]=args;}
   else throw Error('Unsupported drawImage args '+args.length);
   if(!image.data&&!image.pixels)return;
@@ -60,7 +62,7 @@ function sourceImage(name,second=true){
   naturalHeight:height,complete:true,spriteRows:1,spriteCols:2,
   data,decode:()=>Promise.resolve()};
 }
-function moduleFixture(withDB=false){
+function moduleFixture(withDB=false,script=SPRITES){
  const records=new Map();
  const sandbox={
   window:null,document:{createElement:()=>new FakeCanvas()},
@@ -100,7 +102,7 @@ function moduleFixture(withDB=false){
   }};
  }
  sandbox.window=sandbox;
- vm.runInContext(SPRITES,vm.createContext(sandbox),{filename:'sprite-import-v49.js',timeout:3000});
+ vm.runInContext(script,vm.createContext(sandbox),{filename:'sprite-import.js',timeout:3000});
  return {atlas:sandbox.SpriteAtlas,records};
 }
 test('Packed atlas retains original frame proportions and keeps a crossed-arm pixel',async()=>{
@@ -155,4 +157,28 @@ test('Versioned persistent PNG cache reopens packed frames without pixel scans',
  const renderer=new FakeContext(new FakeCanvas(1000,1000));
  fixture.atlas.draw(renderer,another,0,0,400,460,300);
  assert.equal(renderer.calls.length,1);
+});
+
+test('The packed renderer has pixel-identical frames and identical anchors to v48',async()=>{
+ const v48=moduleFixture(false,LEGACY),v49=moduleFixture();
+ const src48=sourceImage('side-by-side'),src49=sourceImage('side-by-side');
+ await v48.atlas.prepare([src48]);
+ await v49.atlas.prepare([src49]);
+ const ctx48=new FakeContext(new FakeCanvas(1000,1000));
+ const ctx49=new FakeContext(new FakeCanvas(1000,1000));
+ for(const col of [0,1]){
+  v48.atlas.draw(ctx48,src48,0,col,460,470,330);
+  v49.atlas.draw(ctx49,src49,0,col,460,470,330);
+  const old=ctx48.calls.at(-1),now=ctx49.calls.at(-1);
+  assert.equal(old.args.length,4);assert.equal(now.args.length,8);
+  assert.deepEqual(now.args.slice(4),old.args,'Body position and size must match legacy');
+  const [sx,sy,sw,sh]=now.args;
+  assert.equal(sw,old.image.width);assert.equal(sh,old.image.height);
+  const packed=now.image.pixels,actual=[];
+  for(let y=sy;y<sy+sh;y++)for(let x=sx;x<sx+sw;x++){
+   actual.push(...packed.slice((y*now.image.width+x)*4,(y*now.image.width+x)*4+4));
+  }
+  assert.deepEqual(actual,[...old.image.pixels],
+   'All RGBA pixels including face and protruding arm remain unchanged');
+ }
 });
