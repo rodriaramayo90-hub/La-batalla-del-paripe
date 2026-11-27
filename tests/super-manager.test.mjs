@@ -81,6 +81,8 @@ test('All six production supers register instead of overwriting global lifecycle
  for(const path of scripts){
   const source=read(path);
   assert.match(source,/SUPER_MANAGER\.register\(/,'Missing registration in '+path);
+  assert.doesNotMatch(source,/\b(?:old|prior|previous)(?:Strike|Update|Draw|Hud|Reset)\b/,
+   'Stale reference to a removed global wrapper in '+path);
   assert.doesNotMatch(source,/(?:^|\n)\s*(?:strike|update|draw|updateHud|resetArcade)\s*=\s*function\b/m,
    'Nested global combat wrapper remains in '+path);
  }
