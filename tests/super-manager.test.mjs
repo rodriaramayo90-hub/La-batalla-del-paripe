@@ -106,6 +106,7 @@ function fullGame(){
   ending:false,introFrames:0,projectileClash:null,castSerial:0,exFlash:0,
   announcement:'',announceTime:0,score:0,shake:0,hitstop:0,
   MAX_HP:220,soundEnabled:false,ctx:{},effects:[],
+  assetReady:Promise.resolve(true),
   haptic(){},sfx(){},clearActionBuffer(){},cancelCharges(){},
   cancelSecondCharges(){},audio:{playVoice(){}},cancelSpeech(){},finish(){},
   $:()=>null,clamp:(v,a,b)=>Math.max(a,Math.min(v,b)),
