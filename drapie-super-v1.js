@@ -4,7 +4,7 @@
 'use strict';
 const DS={active:false,t:0,length:330,speed:.72,actor:null,victim:null,art:null,hit:false,stunned:false,spoke:false,utterance:null,finished:false};
 window.DRAPIE_SUPER=DS;
-const priorStrike=strike,priorUpdate=update,priorDraw=draw,priorHud=updateHud,priorReset=resetArcade,priorCancelSpeech=cancelSpeech;
+const priorCancelSpeech=cancelSpeech;
 const stories=[
  {site:'X / TWITTER',tag:'X',color:'#242b46',text:'¡Un vecino se hizo viral por discutir con una gaviota!'},
  {site:'INSTAGRAM',tag:'IG',color:'#b74291',text:'Subió 37 historias para explicar que no sube historias.'},
@@ -22,19 +22,19 @@ function muteOurVoice(){
  DS.utterance=null;
 }
 function reset(){muteOurVoice();DS.active=false;DS.actor=null;DS.victim=null;DS.t=0;DS.hit=false;DS.stunned=false;DS.spoke=false;DS.finished=false;}
-resetArcade=function(){reset();return priorReset.apply(this,arguments);};
+
 cancelSpeech=function(){muteOurVoice();return priorCancelSpeech.apply(this,arguments);};
 function canStart(a,type){
  return type==='special'&&a&&a.id===6&&a.hp>0&&a.attack<=0&&a.cool<=0&&a.stun<=0&&a.blockstun<=0&&!a.blocking&&!a.grabbed&&!a.grabbing&&a.escaping<=0&&a.y===0&&(practice||a.meter>=100)&&introFrames<=0&&!ending&&!DS.active&&!(window.TREX_SUP&&window.TREX_SUP.active)&&!(typeof ONLINE!=='undefined'&&ONLINE.active)&&!(typeof projectileClash!=='undefined'&&projectileClash);
 }
-strike=function(a,b,type,power,low){
- if(!canStart(a,type))return priorStrike.apply(this,arguments);
+function startStrike(a,b,type,power,low){
+ if(!canStart(a,type))return false;
  DS.active=true;DS.actor=a;DS.victim=b||null;window.SUPER_DEFENSE?.start('drapie',a,b);DS.t=0;DS.hit=false;DS.stunned=false;DS.spoke=false;DS.finished=false;
  a.meter=0;a.attackType='drapie-super';a.attackLength=DS.length;a.attack=DS.length;a.finisher=false;a.ex=true;a.cool=practice?DS.length:390;
  a.hit=false;a.connected=false;a.crouching=false;a.blocking=false;a.moving=false;a.shots=0;a.vy=0;a.y=0;a.cast=++castSerial;a.invuln=DS.length+12;
  if(b)b.moving=false;
  clearActionBuffer();cancelCharges();if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
- announcement='¡SOBREDOSIS DE REDES!';announceTime=0;exFlash=18;sfx('ready');haptic(35);priorHud();return true;
+ announcement='¡SOBREDOSIS DE REDES!';announceTime=0;exFlash=18;sfx('ready');haptic(35);updateHud();return true;
 };
 function speak(){
  if(DS.spoke)return;DS.spoke=true;
@@ -153,11 +153,12 @@ function tick(dt){
   clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];
   if(dead)finish(win);
  }
- priorHud();
+ updateHud();
 }
-update=function(dt){if(DS.active){tick(dt);return;}return priorUpdate.apply(this,arguments);};
-draw=function(){priorDraw.apply(this,arguments);if(DS.active)cinematic();};
-updateHud=function(){priorHud.apply(this,arguments);if(!player)return;
+
+
+function drawSuperHud(){
+if(!player)return;
  const ready=player.id===6&&(practice||player.meter>=100)&&player.cool<=0&&!DS.active;
  const btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('drapie-super-ready',ready);if(ready){const label=btn.querySelector('small');if(label)label.textContent='SÚPER EX';btn.setAttribute('aria-label','Súper EX de La Drapie: sobredosis de redes');}}
  if(ready&&$('cool'))$('cool').textContent='EX LLENO · ○ / L / ESPACIO: SOBREDOSIS DE REDES';
@@ -171,4 +172,8 @@ try{
  }).catch(e=>console.warn('[Drapie EX] Fallback de sprites activo',e));
 }catch(e){console.warn('[Drapie EX] Sin sprite externo',e);}
 const css=document.createElement('style');css.textContent='.drapie-super-ready{outline:3px solid #ffb1f8!important;box-shadow:0 0 16px 5px #eb6efe,inset 0 0 12px #fff0bf!important;animation:drapieExPulse .8s ease-in-out infinite alternate}@keyframes drapieExPulse{from{filter:brightness(1)}to{filter:brightness(1.4)}}';document.head.appendChild(css);
+
+// Central EX dispatcher owns strike/update/draw/HUD/reset. No global wrappers here.
+window.SUPER_MANAGER.register({fighterId:6,key:'drapie',state:DS,
+ canStart:canStart,start:startStrike,update:tick,draw:cinematic,hud:drawSuperHud,reset});
 })();

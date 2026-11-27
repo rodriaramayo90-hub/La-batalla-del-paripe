@@ -40,9 +40,9 @@ css.textContent=[
 document.head.appendChild(css);
 const originalStrike=strike,originalHud=updateHud,originalUpdate=update;
 let requestingSuper=false;
-const supported=id=>id===0||id===1||id===2||id===5||id===6||id===9;
+const supported=id=>!!window.SUPER_MANAGER?.supports(id);
 const inTraining=()=>mode==='game'&&practice&&!LOCAL.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active);
-const cinematicActive=()=>!!(window.TREX_SUP?.active||window.DRAPIE_SUPER?.active||window.ALCA_SUPER?.active||window.BERGA_SUPER?.active||window.MALEFICA_SUPER?.active||window.COQUI_SUPER?.active);
+const cinematicActive=()=>!!window.SUPER_MANAGER?.isActive();
 // En campaña, una barra EX llena reserva el próximo especial para la
 // cinemática. Si aún está en el aire o impedido, no gastarlo en uno normal.
 // La práctica mantiene dos botones separados y VS/online no se modifican.

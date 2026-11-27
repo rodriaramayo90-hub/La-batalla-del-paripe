@@ -2,15 +2,15 @@
 (function(){'use strict';
 const S={active:false,t:0,length:320,speed:.72,a:null,b:null,hit:false,horn:-1};
 window.BERGA_SUPER=S;
-const previousStrike=strike,previousUpdate=update,previousDraw=draw,previousHud=updateHud,previousReset=resetArcade;
+
 function reset(){S.active=false;S.t=0;S.a=null;S.b=null;S.hit=false;S.horn=-1;}
-resetArcade=function(){reset();return previousReset.apply(this,arguments)};
+
 function allowed(a,type){return type==='special'&&a?.id===5&&a.hp>0&&a.y===0&&a.attack<=0&&a.cool<=0&&a.stun<=0&&a.blockstun<=0&&!a.blocking&&!a.grabbed&&!a.grabbing&&a.escaping<=0&&(practice||a.meter>=100)&&introFrames<=0&&!ending&&!window.TREX_SUP?.active&&!window.DRAPIE_SUPER?.active&&!window.ALCA_SUPER?.active&&!S.active&&!(typeof ONLINE!=='undefined'&&ONLINE.active)}
-strike=function(a,b,type,power,low){if(!allowed(a,type))return previousStrike.apply(this,arguments);
+function startStrike(a,b,type,power,low){if(!allowed(a,type))return false;
  S.active=true;S.t=0;S.a=a;S.b=b||null;S.hit=false;S.horn=0;window.SUPER_DEFENSE?.start('berga',a,b);
  a.meter=0;a.attackType='berga-super';a.attackLength=S.length;a.attack=S.length;a.ex=true;a.finisher=false;a.cool=practice?S.length:420;a.vy=0;a.y=0;a.blocking=false;a.crouching=false;a.moving=false;a.hit=false;a.connected=false;a.cast=++castSerial;a.shots=0;a.invuln=S.length+10;
  if(b)b.moving=false;clearActionBuffer();cancelCharges();if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
- announcement='¡BOCINAZO FEROZ!';announceTime=0;exFlash=20;haptic(55);previousHud();return true;
+ announcement='¡BOCINAZO FEROZ!';announceTime=0;exFlash=20;haptic(55);updateHud();return true;
 };
 function text(s,x,y,size,color='#fff'){ctx.save();ctx.font='italic 900 '+size+'px system-ui';ctx.textAlign='center';ctx.lineWidth=7;ctx.strokeStyle='#170b2c';ctx.strokeText(s,x,y);ctx.fillStyle=color;ctx.fillText(s,x,y);ctx.restore()}
 function person(id,x,y,size){const m=atlasMap[id];ctx.save();ctx.translate(x,y);SpriteAtlas.draw(ctx,atlases[m[0]],m[1],0,0,0,size);ctx.restore()}
@@ -357,8 +357,13 @@ function playRealHorn(){
  }catch(e){console.warn('[Bocinazo] Audio horn failed',e)}
 }
 function tick(dt){if(!S.active)return;S.t=Math.min(S.length,S.t+dt*S.speed);const a=S.a;a.attack=Math.max(0,S.length-S.t);window.SUPER_DEFENSE?.tick('berga',S.t);if(S.t>=125&&S.t<232){const beat=Math.floor((S.t-125)/20);if(beat>S.horn){S.horn=beat;playRealHorn();haptic(20)}}if(S.t>=270&&!S.hit)impact();if(S.t>=S.length){const dead=!!S.b&&S.b.hp<=0,win=a===player;window.SUPER_DEFENSE?.end('berga');reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];if(dead)finish(win)}previousHud()}
-update=function(dt){if(S.active){tick(dt);return}return previousUpdate.apply(this,arguments)};
-draw=function(){previousDraw.apply(this,arguments);if(S.active)cinematic()};
-updateHud=function(){previousHud.apply(this,arguments);if(!player)return;const ready=player.id===5&&(practice||player.meter>=100)&&player.cool<=0&&!S.active;const btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('berga-super-ready',ready);if(ready){const label=btn.querySelector('small');if(label)label.textContent='SÚPER EX';btn.setAttribute('aria-label','Bocinazo feroz')}}if(ready&&$('cool'))$('cool').textContent='EX LLENO · ¡BOCINAZO FEROZ!'};
+
+
+function drawSuperHud(){
+if(!player)return;const ready=player.id===5&&(practice||player.meter>=100)&&player.cool<=0&&!S.active;const btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('berga-super-ready',ready);if(ready){const label=btn.querySelector('small');if(label)label.textContent='SÚPER EX';btn.setAttribute('aria-label','Bocinazo feroz')}}if(ready&&$('cool'))$('cool').textContent='EX LLENO · ¡BOCINAZO FEROZ!'};
 const css=document.createElement('style');css.textContent='.berga-super-ready{outline:3px solid #ffdc8a!important;box-shadow:0 0 17px 5px #fa7695!important;animation:bergaGlow .8s infinite alternate}@keyframes bergaGlow{to{filter:brightness(1.4)}}';document.head.appendChild(css);
+
+// Central EX dispatcher owns strike/update/draw/HUD/reset. No global wrappers here.
+window.SUPER_MANAGER.register({fighterId:5,key:'berga',state:S,
+ canStart:allowed,start:startStrike,update:tick,draw:cinematic,hud:drawSuperHud,reset});
 })();

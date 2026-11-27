@@ -4,21 +4,21 @@
 'use strict';
 var SUP={active:false,age:0,actor:null,victim:null,landed:false,blocked:false,miss:false,frames:[],length:198,ready:false,speed:.65};
 window.TREX_SUP=SUP;
-var oldStrike=strike,oldUpdate=update,oldDraw=draw,oldHud=updateHud,oldReset=resetArcade;
+
 function reset(){SUP.active=false;SUP.actor=null;SUP.victim=null;SUP.age=0;SUP.landed=false;SUP.miss=false;}
-resetArcade=function(){reset();return oldReset.apply(this,arguments);};
+
 function canStart(a,type){
  return type==='special'&&a&&a.id===1&&(practice||a.meter>=100)&&a.cool<=0&&a.attack<=0&&a.stun<=0&&a.blockstun<=0&&!a.blocking&&a.escaping<=0&&a.hp>0&&a.y===0&&!a.legGone&&!ending&&!SUP.active&&introFrames<=0&&!(typeof ONLINE!=='undefined'&&ONLINE.active);
 }
-strike=function(a,b,type,power,low){
- if(!canStart(a,type))return oldStrike.apply(this,arguments);
+function startStrike(a,b,type,power,low){
+ if(!canStart(a,type))return false;
  SUP.active=true;SUP.age=0;SUP.actor=a;SUP.victim=b||null;window.SUPER_DEFENSE?.start('trex',a,b);SUP.landed=false;SUP.blocked=false;SUP.miss=false;
  a.meter=0;a.attackType='trex-super';a.attackLength=SUP.length;a.attack=SUP.length;a.ex=true;a.finisher=false;a.cool=practice?SUP.length:390;a.crouching=false;a.blocking=false;a.moving=false;a.hit=false;a.connected=false;a.shots=0;a.cast=++castSerial;a.vy=0;a.y=0;a.invuln=SUP.length+8;
  if(b){b.blocking=b.blocking&&b.y===0; b.moving=false;}
  clearActionBuffer();cancelCharges();if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
  announcement='¡SUPREMO: TABLAZO DE T-REX!';announceTime=0;exFlash=20;
  // El súper es completamente silencioso: ni grito ni efectos propios.
- haptic(45);oldHud();
+ haptic(45);updateHud();
  return true;
 };
 function stroke(c,color,width){c.strokeStyle=color;c.lineWidth=width;c.lineJoin='round';c.stroke();}
@@ -111,9 +111,9 @@ function tick(dt){
  a.attack=Math.max(0,SUP.length-t);
  window.SUPER_DEFENSE?.tick('trex',t);if(t>=169&&!SUP.landed)hitNow();
  if(t>=SUP.length){window.SUPER_DEFENSE?.end('trex');var dead=SUP.victim&&SUP.victim.hp<=0,win=SUP.actor===player;reset();a.attack=0;a.attackType='';a.ex=false;a.invuln=0;if(dead)finish(win);}
- oldHud();
+ updateHud();
 }
-update=function(dt){if(SUP.active){tick(dt);return;}return oldUpdate.apply(this,arguments);};
+
 function visualIndex(t){
  if(t<15)return 0;if(t<32)return 1;if(t<44)return 2;
  // El primer sprite de inflado original (3) desplaza la pierna de apoyo.
@@ -192,10 +192,15 @@ function cinematic(){
  if(t>=44&&t<124){var air=(t-44)/80;round(ctx,380,438,260,12,6,'#0e2545','#d9ffff');round(ctx,382,440,256*air,8,4,'#20f6c4');ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.font='900 17px system-ui';ctx.fillText(Math.floor(air*15)+' PSI',510,425);}
  window.SUPER_DEFENSE?.draw('trex',ctx,t);ctx.restore();
 }
-draw=function(){oldDraw.apply(this,arguments);if(SUP.active)cinematic();};
-updateHud=function(){oldHud.apply(this,arguments);if(!player)return;var ready=player.id===1&&(practice||player.meter>=100)&&player.cool<=0&&!SUP.active;
+
+function drawSuperHud(){
+if(!player)return;var ready=player.id===1&&(practice||player.meter>=100)&&player.cool<=0&&!SUP.active;
  var btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('trex-super-ready',ready);if(ready){var small=btn.querySelector('small');if(small)small.textContent='SÚPER EX';btn.setAttribute('aria-label','Súper EX T-Rex: inflar tabla y golpear');}}
  if(ready&&$('cool'))$('cool').textContent='¡EX LLENO! ○ / L / ESPACIO = SUPREMO';
 };
 var css=document.createElement('style');css.textContent='.trex-super-ready{box-shadow:0 0 18px 5px #3df9e9,inset 0 0 14px #fff0a1!important;outline:3px solid #ffe954!important;animation:trexPulse .9s ease-in-out infinite alternate}@keyframes trexPulse{from{filter:brightness(1)}to{filter:brightness(1.45)}}';document.head.appendChild(css);
+
+// Central EX dispatcher owns strike/update/draw/HUD/reset. No global wrappers here.
+window.SUPER_MANAGER.register({fighterId:1,key:'trex',state:SUP,
+ canStart:canStart,start:startStrike,update:tick,draw:cinematic,hud:drawSuperHud,reset});
 })();

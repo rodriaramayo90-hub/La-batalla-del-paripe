@@ -58,6 +58,7 @@ function fixture(type,{practice=false,actorSlot=0}={}){
  const sandbox=vm.createContext(env);
  function load(path){vm.runInContext(read(path),sandbox,{filename:path,timeout:3000});}
  load('super-defense-v1.js');
+ load('super-manager-v1.js');
  load(type==='malefica'?'malefica-super-v1.js':'coqui-super-v1.js');
  if(practice)load('training-special-controls-v1.js');
  const name=type==='malefica'?'MALEFICA_SUPER':'COQUI_SUPER';

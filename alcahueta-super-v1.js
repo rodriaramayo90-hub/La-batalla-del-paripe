@@ -7,13 +7,13 @@
 const MI={active:false,age:0,length:340,speed:.78,actor:null,victim:null,art:null,
          hitEvents:new Set(),blocked:false,said:false,utterance:null};
 window.ALCA_SUPER=MI;
-const oldStrike=strike,oldUpdate=update,oldDraw=draw,oldHud=updateHud,oldReset=resetArcade;
+
 const phases=[126,184,235,275], fractions=[.08,.09,.09,.22];
 function stopVoice(){if(MI.utterance&&typeof window.speechSynthesis!=='undefined'){
  try{window.speechSynthesis.cancel()}catch(_){}}
  MI.utterance=null;}
 function reset(){stopVoice();MI.active=false;MI.age=0;MI.actor=null;MI.victim=null;MI.hitEvents.clear();MI.blocked=false;MI.said=false;}
-resetArcade=function(){reset();return oldReset.apply(this,arguments);};
+
 function canStart(a,type){
  return type==='special'&&a?.id===0&&a.hp>0&&a.y===0&&a.attack<=0&&a.cool<=0
    &&a.stun<=0&&a.blockstun<=0&&!a.blocking&&!a.grabbed&&!a.grabbing
@@ -22,8 +22,8 @@ function canStart(a,type){
    &&!(typeof ONLINE!=='undefined'&&ONLINE.active)
    &&!(typeof projectileClash!=='undefined'&&projectileClash);
 }
-strike=function(a,b,type,power,low){
- if(!canStart(a,type))return oldStrike.apply(this,arguments);
+function startStrike(a,b,type,power,low){
+ if(!canStart(a,type))return false;
  MI.active=true;MI.age=0;MI.actor=a;MI.victim=b||null;window.SUPER_DEFENSE?.start('alca',a,b);MI.hitEvents.clear();MI.blocked=!!(b&&b.blocking&&b.y===0);MI.said=false;
  a.meter=0;a.attackType='alcahueta-super';a.attackLength=MI.length;a.attack=MI.length;
  a.ex=true;a.finisher=false;a.cool=practice?MI.length:420;
@@ -33,7 +33,7 @@ strike=function(a,b,type,power,low){
  clearActionBuffer();cancelCharges();
  if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
  announcement='¡MI DESTINO!';announceTime=0;exFlash=20;
- sfx('ready');haptic(50);oldHud();return true;
+ sfx('ready');haptic(50);updateHud();return true;
 };
 function speak(){if(MI.said)return;MI.said=true;
  if(!soundEnabled||!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;
@@ -169,11 +169,12 @@ function tick(dt){
   clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];
   if(dead)finish(won);
  }
- oldHud();
+ updateHud();
 }
-update=function(dt){if(MI.active){tick(dt);return;}return oldUpdate.apply(this,arguments);};
-draw=function(){oldDraw.apply(this,arguments);if(MI.active)cinematic();};
-updateHud=function(){oldHud.apply(this,arguments);if(!player)return;
+
+
+function drawSuperHud(){
+if(!player)return;
  const ready=player.id===0&&(practice||player.meter>=100)&&player.cool<=0&&!MI.active;
  const btn=document.querySelector('[data-key=special]');if(btn){btn.classList.toggle('alca-super-ready',ready);
   if(ready){const label=btn.querySelector('small');if(label)label.textContent='SÚPER EX';btn.setAttribute('aria-label','La Alcahueta, súper EX: Mi destino');}}
@@ -187,4 +188,8 @@ fetch('assets/alca-duo-sprites-v1.b64?v=1').then(r=>{if(!r.ok)throw Error('Sprit
 }).catch(e=>console.warn('[Mi destino] No se pudo cargar el atlas',e));
 const css=document.createElement('style');css.textContent='.alca-super-ready{outline:3px solid #fff3ab!important;box-shadow:0 0 17px 5px #ffca73!important;animation:alcaEXGlow .85s ease-in-out infinite alternate}@keyframes alcaEXGlow{from{filter:brightness(1)}to{filter:brightness(1.35)}}';
 document.head.appendChild(css);
+
+// Central EX dispatcher owns strike/update/draw/HUD/reset. No global wrappers here.
+window.SUPER_MANAGER.register({fighterId:0,key:'alca',state:MI,
+ canStart:canStart,start:startStrike,update:tick,draw:cinematic,hud:drawSuperHud,reset});
 })();

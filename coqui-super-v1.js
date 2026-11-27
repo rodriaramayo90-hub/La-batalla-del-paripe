@@ -5,9 +5,9 @@
 const C={active:false,t:0,length:354,speed:.82,actor:null,victim:null,frames:[],
   ready:false,hit:false,miss:false,defense:null,soundStep:0};
 window.COQUI_SUPER=C;
-const oldStrike=strike,oldUpdate=update,oldDraw=draw,oldHud=updateHud,oldReset=resetArcade;
+
 function reset(){C.active=false;C.t=0;C.actor=null;C.victim=null;C.hit=false;C.miss=false;C.defense=null;C.soundStep=0;}
-resetArcade=function(){if(C.active)window.SUPER_DEFENSE?.end('coqui');reset();return oldReset.apply(this,arguments);};
+
 function canStart(a,type){
  return type==='special'&&a&&a.id===2&&a.hp>0&&a.y===0
  &&a.attack<=0&&a.cool<=0&&a.stun<=0&&a.blockstun<=0
@@ -17,8 +17,8 @@ function canStart(a,type){
  &&!(typeof projectileClash!=='undefined'&&projectileClash)
  &&!['TREX_SUP','DRAPIE_SUPER','ALCA_SUPER','BERGA_SUPER','MALEFICA_SUPER','COQUI_SUPER'].some(k=>window[k]?.active);
 }
-strike=function(a,b,type,power,low){
- if(!canStart(a,type))return oldStrike.apply(this,arguments);
+function startStrike(a,b,type,power,low){
+ if(!canStart(a,type))return false;
  reset();C.active=true;C.actor=a;C.victim=b||null;
  window.SUPER_DEFENSE?.start('coqui',a,b);
  a.meter=0;a.attackType='coqui-super';a.attackLength=C.length;a.attack=C.length;
@@ -29,7 +29,7 @@ strike=function(a,b,type,power,low){
  clearActionBuffer();cancelCharges();
  if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
  announcement='¡REFORMAS A DOMICILIO!';announceTime=0;exFlash=18;
- haptic(38);oldHud();return true;
+ haptic(38);updateHud();return true;
 };
 function line(c,points,color,w){
  c.strokeStyle=color;c.lineWidth=w;c.lineCap='round';c.lineJoin='round';
@@ -325,13 +325,12 @@ function tick(dt){
   clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];
   if(dead)finish(win);
  }
- oldHud();
+ updateHud();
 }
-update=function(dt){if(C.active){tick(dt);return;}return oldUpdate.apply(this,arguments);};
-draw=function(){oldDraw.apply(this,arguments);if(C.active)cinematic();};
-updateHud=function(){
- oldHud.apply(this,arguments);
- if(!player)return;
+
+
+function drawSuperHud(){
+if(!player)return;
  const ready=player.id===2&&(practice||player.meter>=100)&&player.cool<=0&&!C.active;
  const btn=document.querySelector('[data-key=special]');
  if(btn)btn.classList.toggle('coqui-super-ready',ready);
@@ -340,4 +339,8 @@ updateHud=function(){
 const css=document.createElement('style');
 css.textContent='.coqui-super-ready{outline:3px solid #e9f8ab!important;box-shadow:0 0 18px 5px #a3eee9!important;animation:coquiExPulse 1s ease-in-out infinite alternate}@keyframes coquiExPulse{to{filter:brightness(1.4)}}';
 document.head.appendChild(css);
+
+// Central EX dispatcher owns strike/update/draw/HUD/reset. No global wrappers here.
+window.SUPER_MANAGER.register({fighterId:2,key:'coqui',state:C,
+ canStart:canStart,start:startStrike,update:tick,draw:cinematic,hud:drawSuperHud,reset});
 })();

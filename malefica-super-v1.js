@@ -11,8 +11,7 @@ const H={
 };
 window.MALEFICA_SUPER=H;
 
-const previousStrike=strike,previousUpdate=update,previousDraw=draw,
-      previousHud=updateHud,previousReset=resetArcade;
+
 
 function loadSheet(file,key,minW,minH){
  fetch('assets/malefica-humor-negro-'+file+'.b64?v=1')
@@ -38,7 +37,6 @@ function reset(){
  H.active=false;H.t=0;H.actor=null;H.victim=null;
  H.hit=false;H.waveTick=-1;H.finishResult=null;
 }
-resetArcade=function(){reset();return previousReset.apply(this,arguments)};
 
 function ready(a,type){
  return type==='special'&&a&&a.id===9&&a.hp>0&&a.y===0&&a.attack<=0
@@ -51,8 +49,8 @@ function ready(a,type){
   &&!window.ALCA_SUPER?.active&&!window.BERGA_SUPER?.active&&!H.active;
 }
 
-strike=function(a,b,type,power,low){
- if(!ready(a,type))return previousStrike.apply(this,arguments);
+function startStrike(a,b,type,power,low){
+ if(!ready(a,type))return false;
  reset();
  H.active=true;H.t=0;H.actor=a;H.victim=b||null;
  window.SUPER_DEFENSE?.start('malefica',a,b);
@@ -65,7 +63,7 @@ strike=function(a,b,type,power,low){
  clearActionBuffer();cancelCharges();
  if(typeof SECOND!=='undefined'){SECOND.actions=[];cancelSecondCharges();}
  announcement='¡HUMOR NEGRO!';announceTime=0;exFlash=22;
- haptic(35);previousHud();return true;
+ haptic(35);updateHud();return true;
 };
 
 function frame(img,id,cols,rows,x,y,w,h){
@@ -267,13 +265,12 @@ function tick(dt){
   clearActionBuffer();if(typeof SECOND!=='undefined')SECOND.actions=[];
   if(dead)finish(win);
  }
- previousHud();
+ updateHud();
 }
-update=function(dt){if(H.active){tick(dt);return;}return previousUpdate.apply(this,arguments)};
-draw=function(){previousDraw.apply(this,arguments);if(H.active)cinematic()};
-updateHud=function(){
- previousHud.apply(this,arguments);
- if(!player)return;
+
+
+function drawSuperHud(){
+if(!player)return;
  const ready=player.id===9&&(practice||player.meter>=100)&&player.cool<=0&&!H.active;
  const btn=document.querySelector('[data-key=special]');
  if(btn)btn.classList.toggle('malefica-super-ready',ready);
@@ -282,4 +279,8 @@ updateHud=function(){
 const css=document.createElement('style');
 css.textContent='.malefica-super-ready{outline:3px solid #e6acff!important;box-shadow:0 0 16px 6px #b86aff!important;animation:maleficaExPulse .8s ease-in-out infinite alternate}@keyframes maleficaExPulse{to{filter:brightness(1.4)}}';
 document.head.appendChild(css);
+
+// Central EX dispatcher owns strike/update/draw/HUD/reset. No global wrappers here.
+window.SUPER_MANAGER.register({fighterId:9,key:'malefica',state:H,
+ canStart:ready,start:startStrike,update:tick,draw:cinematic,hud:drawSuperHud,reset});
 })();

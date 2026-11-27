@@ -1,7 +1,7 @@
 # Production layout — La batalla del paripé
 
 The GitHub Pages entry point is \`index.html\`. It loads **one external stylesheet**
-(\`game.css\`) and the 33 live JavaScript modules in their original dependency
+(\`game.css\`) and the 34 live JavaScript modules in their original dependency
 order. \`game.css\` is an exact ordered concatenation of the previously loaded
 13 CSS files and four inline style blocks. The CSS source comments label every
 original segment for future maintenance; the cascade order has not changed.
@@ -32,3 +32,7 @@ obsolete root production files.
 The cleanup leaves images/audio in \`assets/\` intact: some historical-looking
 resource names are still referenced by live JavaScript and are NOT safe to
 delete merely because their filenames contain old version numbers.
+
+The EX manager (`super-manager-v1.js`) dispatches all six character supers.
+Its registration API replaces nested global wrappers; future supers register
+hooks instead of replacing `strike`/`update`/`draw`/`updateHud`/`resetArcade`.
