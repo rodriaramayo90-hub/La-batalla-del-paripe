@@ -52,9 +52,9 @@ const frames=Object.freeze({
 function poseAt(pose,t){
  let frame=frames[pose]??0;
  if(pose===8)frame=Math.floor(Math.max(0,t)/8)%2?1:0;
- if(pose===2)frame=Math.floor(Math.max(0,t)/28)%2?4:5;
- if(pose===3)frame=Math.floor(Math.max(0,t)/19)%2?7:10;
- if(pose===4)frame=Math.floor(Math.max(0,t)/24)%2?8:5;
+ if(pose===2)frame=Math.floor(Math.max(0,t)/28)%2?5:4;
+ if(pose===3)frame=Math.floor(Math.max(0,t)/19)%2?10:7;
+ if(pose===4)frame=Math.floor(Math.max(0,t)/24)%2?5:8;
  return frame;
 }
 function officer(ctx,x,y,scale=.72,pose=0,flip=false,variant=0,t=0){
@@ -81,7 +81,10 @@ const upgraded=Object.freeze({
  get illustratedOfficersReady(){return atlases.filter(x=>x.ready).length;},
  get realSpriteAtlasesReady(){return atlases.filter(x=>x.ready).length;},
  get realSpriteAtlasErrors(){return atlases.filter(x=>x.error).length;},
- get policeSpriteSources(){return sources.slice();}
+ get policeSpriteSources(){return sources.slice();},
+ get backgroundReady(){return old.backgroundReady;},
+ get policeSpritesReady(){return old.policeSpritesReady;},
+ get illustratedBackgroundReady(){return old.illustratedBackgroundReady;}
 });
 window.FLOR_AIRPORT_ART=upgraded;
 window.FLOR_POLICE_SPRITES=Object.freeze({
