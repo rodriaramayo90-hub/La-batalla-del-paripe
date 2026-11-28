@@ -98,3 +98,13 @@ Fueron preparados a partir de ilustraciones originales en estilo fighting-game, 
 El motor carga estas imágenes reales al iniciar la página. El dibujo geométrico V1/V2 **no se usa mientras cargan** los WebP. Solo se conserva como alternativa de emergencia cuando falla una imagen, para evitar que un error de red deje la partida rota. Para comprobar qué se cargó, ejecutar `FLOR_POLICE_SPRITES` en la consola del navegador; `ready` debe indicar `true`, `loaded` debe ser `2` y `failed` debe ser `0`.
 
 La identidad de Flor Rubia y del contrincante sigue procediendo de sus propios sprites originales; el minijuego de pasaporte y los resultados de 48 %, 24 % y 0 % no cambian.
+
+## Sincronización de audio (V4)
+
+Las seis intervenciones de voz se disparan en el **primer fotograma del bocadillo correspondiente** (28, 63, 98, 143, 291 y 347, este último solo con defensa perfecta). La cinemática mantiene el bocadillo visible mientras el sintetizador de voz del navegador habla; cuando recibe `onend` o `onerror`, continúa desde el mismo fotograma.
+
+El audio no acumula frases en cola: cada voz nueva cancela cualquier intervención anterior. Salir del súper, silenciar el juego o reiniciar limpia la voz pendiente y evita que una devolución tardía de `onend` afecte la siguiente partida. Hay un tiempo máximo de seguridad de 3,5–8,5 segundos para sintetizadores móviles que no emiten `onend`.
+
+Los efectos breves de las primeras escenas también se disparan en los cortes de imagen (fotogramas 28/63/98/143 en vez de 34/76/112/155). El resultado de aduana se pronuncia a partir del 291 y la protesta «¡Pero otra vez yo, boludo!» empieza en el 347, **no** en el 293. Las ventanas de defensa del pasaporte, los daños y los sprites no cambian. Sin sonido o sin síntesis de voz, no se bloquea la animación.
+
+La voz continúa dependiendo del motor TTS del dispositivo; no se han generado ni incluido archivos de voz pregrabados. `tests/flor-audio-sync.test.mjs` prueba el encaje entre audio/bocadillos, las salidas perfecta/parcial/fallida, voz larga, mute, reinicio y motores TTS que fallan.

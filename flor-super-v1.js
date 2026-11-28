@@ -7,7 +7,8 @@
 'use strict';
 const S={
  active:false,t:0,length:432,speed:.82,actor:null,victim:null,
- hit:false,miss:false,verdict:null,spoken:new Set(),cues:new Set()
+ hit:false,miss:false,verdict:null,spoken:new Set(),cues:new Set(),
+ voiceWait:null,voiceToken:0,voiceWatchdog:null
 };
 window.FLOR_SUPER=S;
 const A=window.FLOR_AIRPORT_ART;
@@ -16,11 +17,16 @@ const cap=(n,lo=0,hi=1)=>Math.max(lo,Math.min(hi,n));
 const smooth=n=>{const t=cap(n);return t*t*(3-2*t)};
 const clampFloat=(n,lo,hi)=>cap(n,lo,hi);
 const safe=()=>!!A&&!!window.SUPER_MANAGER;
+function stopNarration(){
+ // Invalidate pending TTS callbacks before cancelling the browser's voice queue.
+ ++S.voiceToken;
+ if(S.voiceWatchdog!==null){clearTimeout(S.voiceWatchdog);S.voiceWatchdog=null;}
+ S.voiceWait=null;
+ if(S.spoken.size)try{window.speechSynthesis?.cancel()}catch(_){}
+}
 function reset(){
- if(S.active){
-  window.SUPER_DEFENSE?.end('flor');
-  if(S.spoken.size)try{window.speechSynthesis?.cancel()}catch(_){}
- }
+ if(S.active)window.SUPER_DEFENSE?.end('flor');
+ stopNarration();
  S.active=false;S.t=0;S.actor=null;S.victim=null;
  S.hit=false;S.miss=false;S.verdict=null;S.spoken.clear();S.cues.clear();
 }
@@ -51,17 +57,57 @@ function startStrike(a,b,type){
  sfx('ready');haptic(38);updateHud();
  return true;
 }
-function sayOnce(key,words,lang='es-AR'){
- if(S.spoken.has(key))return;
- S.spoken.add(key);
- // Voice is optional; the same full dialogue always appears in subtitles.
- if(!soundEnabled||typeof window.speechSynthesis==='undefined'
-   ||typeof window.SpeechSynthesisUtterance==='undefined')return;
+/* Speak only on the exact subtitle frame. Browser TTS latency/duration varies:
+ * the story waits for speech to finish, without changing QTE frame windows.
+ */
+const NARRATION=[
+ {at:28,key:'stop',words:'Madame, contrôle de sécurité.',lang:'fr-FR'},
+ {at:63,key:'deny',words:'¡Yo no hice nada!',lang:'es-AR'},
+ {at:98,key:'argent',words:'¡Pero si esto en Argentina se puede!',lang:'es-AR'},
+ {at:143,key:'suspect',words:'¡Él fue! ¡Ese es el sospechoso!',lang:'es-AR'},
+ {at:291,key:'decision',words:()=>{
+   const r=grade();
+   return r==='perfect'?'Alles gut. ¡El pasaporte está bien!':
+    r==='partial'?'Inspección secundaria...':'¡Expulsión inmediata!';
+  },lang:'es-AR'},
+ {at:347,key:'again',words:'¡Pero otra vez yo, boludo!',
+  lang:'es-AR',when:()=>grade()==='perfect'}
+];
+function releaseVoice(token){
+ if(token!==S.voiceToken)return;
+ if(S.voiceWatchdog!==null){clearTimeout(S.voiceWatchdog);S.voiceWatchdog=null;}
+ S.voiceWait=null;
+}
+function startNarration(cue){
+ S.spoken.add(cue.key);
+ if(cue.when&&!cue.when())return;
+ const synth=window.speechSynthesis,Utterance=window.SpeechSynthesisUtterance;
+ if(!soundEnabled||typeof document!=='undefined'&&document.hidden||
+   !synth||typeof synth.speak!=='function'||typeof Utterance!=='function')return;
+ const words=typeof cue.words==='function'?cue.words():cue.words;
+ const token=++S.voiceToken;
  try{
-  const utterance=new SpeechSynthesisUtterance(words);
-  utterance.lang=lang;utterance.rate=1.16;utterance.pitch=1.09;utterance.volume=.86;
-  window.speechSynthesis.speak(utterance);
- }catch(_){}
+  // Flush any older line; speechSynthesis otherwise queues past its caption.
+  synth.cancel();
+  const u=new Utterance(words);
+  u.lang=cue.lang;u.rate=1.16;u.pitch=1.09;u.volume=.86;
+  S.voiceWait={at:cue.at,key:cue.key,words};
+  u.onend=()=>releaseVoice(token);
+  u.onerror=()=>releaseVoice(token);
+  // Safari / mobile TTS sometimes never fires onend: fail open.
+  S.voiceWatchdog=setTimeout(()=>{
+   if(token!==S.voiceToken)return;
+   try{synth.cancel()}catch(_){}
+   releaseVoice(token);
+  },Math.min(8500,Math.max(3500,words.length*115)));
+  synth.speak(u);
+ }catch(error){
+  releaseVoice(token);
+  console.warn('[Flor EX] Voz no disponible; la escena continuará',error);
+ }
+}
+function nextNarration(from,to){
+ return NARRATION.find(cue=>!S.spoken.has(cue.key)&&from<cue.at&&to>=cue.at);
 }
 function eventAt(t,marker,fn){
  if(t<marker||S.cues.has(marker))return;
@@ -106,19 +152,27 @@ function impact(){
 }
 function tick(dt){
  if(!S.active)return;
- const t=S.t=Math.min(S.length,S.t+Math.max(0,dt||0)*S.speed);
+ if(S.voiceWait){
+  // If the user mutes the game mid-phrase, never leave the EX frozen.
+  if(!soundEnabled)stopNarration();
+  else return;
+ }
+ const previous=S.t,target=Math.min(S.length,previous+Math.max(0,dt||0)*S.speed);
+ const next=nextNarration(previous,target);
+ const t=S.t=next?next.at:target;
+ if(next)startNarration(next);
  const a=S.actor;
  if(a)a.attack=Math.max(0,S.length-t);
  window.SUPER_DEFENSE?.tick('flor',t);
- eventAt(t,34,()=>{sfx('step');sayOnce('stop','Madame, contrôle de sécurité.','fr-FR')});
- eventAt(t,76,()=>{sfx('ready');sayOnce('deny','¡Yo no hice nada!')});
- eventAt(t,112,()=>{sfx('step');sayOnce('argent','¡Pero si esto en Argentina se puede!')});
- eventAt(t,155,()=>{sfx('ready');sayOnce('suspect','¡ÉL FUE! ¡ESE ES EL SOSPECHOSO!')});
+ // Sound cues now land on the visual cuts, not 6–14 frames late.
+ eventAt(t,28,()=>sfx('step'));
+ eventAt(t,63,()=>sfx('ready'));
+ eventAt(t,98,()=>sfx('step'));
+ eventAt(t,143,()=>sfx('ready'));
  eventAt(t,168,()=>sfx('ready'));
- eventAt(t,293,()=>{
+ eventAt(t,291,()=>{
   S.verdict=grade();
   sfx(S.verdict==='perfect'?'guard':'ready');
-  if(S.verdict==='perfect')sayOnce('again','¡Pero otra vez yo, boludo!');
  });
  eventAt(t,342,()=>sfx('step'));
  eventAt(t,368,()=>{if(S.verdict!=='perfect')sfx('ready')});
