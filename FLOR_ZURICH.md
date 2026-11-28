@@ -85,3 +85,16 @@ desenlaces en un navegador con los controles físicos correspondientes.
 - `flor-airport-props-v2.js`: shaded X-ray scanner, three-dimensional moving conveyor, illustrated passport, perfume, hairdryer, fernet and cheese. Fully self-contained SVG/data images, with no external hosts.
 - Flor and rival still use the original `SpriteAtlas` so facial identity and on-screen sizes remain stable. Camera zoom, comic action rays, animated impact particles and improved police choreography now match the game's EX visual language.
 - The three QTE endings, 48/24/0% damage and timings are **unchanged**. Loading errors automatically fall back to the original V1 art.
+
+## V3 — sprites ilustrados reales, no formas SVG
+
+Los personajes de la policía se animan con **dos atlas raster** de 1024 × 768 píxeles, cada uno con 12 poses de 256 × 256, con transparencia alfa y proporciones constantes:
+
+- `assets/flor-police-officer-v3.webp` (agente masculino)
+- `assets/flor-police-officer-female-v3.webp` (agente femenina)
+
+Fueron preparados a partir de ilustraciones originales en estilo fighting-game, limpiando los fondos de cada celda. La selección de pose —caminar, detener, señalar, revisar, acompañar, esposar y sellar— se hace en `flor-police-sprites-v3.js`. El tamaño es invariable en cada pose; el movimiento se logra por cambios de fotograma y posición, no redibujando el cuerpo.
+
+El motor carga estas imágenes reales al iniciar la página. El dibujo geométrico V1/V2 **no se usa mientras cargan** los WebP. Solo se conserva como alternativa de emergencia cuando falla una imagen, para evitar que un error de red deje la partida rota. Para comprobar qué se cargó, ejecutar `FLOR_POLICE_SPRITES` en la consola del navegador; `ready` debe indicar `true`, `loaded` debe ser `2` y `failed` debe ser `0`.
+
+La identidad de Flor Rubia y del contrincante sigue procediendo de sus propios sprites originales; el minijuego de pasaporte y los resultados de 48 %, 24 % y 0 % no cambian.

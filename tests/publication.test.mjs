@@ -41,7 +41,7 @@ test('Root publication no longer serves historical JS, CSS or HTML entrypoints',
  const html=read('index.html');
  const activeScripts=[...html.matchAll(/<script\b[^>]*src=["']([^"']+)["']/gi)]
   .map(m=>m[1].split('?')[0]);
- assert.equal(activeScripts.length,38,'Unexpected game runtime script count');
+ assert.equal(activeScripts.length,39,'Unexpected game runtime script count');
  assert.deepEqual(rootFiles.filter(n=>n.endsWith('.js')).sort(),activeScripts.slice().sort());
  assert.deepEqual(rootFiles.filter(n=>n.endsWith('.css')).sort(),['game.css']);
  assert.deepEqual(rootFiles.filter(n=>n.endsWith('.html')).sort(),['index.html']);

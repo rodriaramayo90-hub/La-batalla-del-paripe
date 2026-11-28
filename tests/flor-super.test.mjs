@@ -52,7 +52,7 @@ function fixture({human=true,practice=false,secondActor=false}={}){
  env.window=env;
  const contextVM=vm.createContext(env);
  for(const script of ['super-defense-v1.js','super-manager-v1.js',
-  'flor-airport-art-v1.js','flor-airport-art-v2.js','flor-airport-props-v2.js','flor-super-v1.js']){
+  'flor-airport-art-v1.js','flor-airport-art-v2.js','flor-airport-props-v2.js','flor-police-sprites-v3.js','flor-super-v1.js']){
   vm.runInContext(read(script),contextVM,{filename:script,timeout:3000});
  }
  const actor=secondActor?env.enemy:env.player;
